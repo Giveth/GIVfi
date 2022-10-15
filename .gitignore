@@ -16,3 +16,6 @@ out/
 # Test JS Scripts
 test/**/node_modules
 test/**/package-lock.json
+
+# Coverage
+lcov.info
