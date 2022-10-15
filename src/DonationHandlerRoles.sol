@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {AccessControlUpgradeable as AccessControl} from
+    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract DonationHandlerRoles is AccessControl {
     bytes32 public constant ACCEPTED_TOKEN = keccak256("ACCEPTED_TOKEN");
-    bytes32 public constant DONATION_RECIPIENT =
-        keccak256("DONATION_RECIPIENT");
+    bytes32 public constant DONATION_RECIPIENT = keccak256("DONATION_RECIPIENT");
     bytes32 public constant FEE_RECEIVER = keccak256("FEE_RECEIVER");
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
@@ -31,7 +31,7 @@ contract DonationHandlerRoles is AccessControl {
 
     function _addRoles(bytes32 _role, address[] calldata _addresses) internal {
         uint256 length = _addresses.length;
-        for (uint256 i = 0; i < length; ) {
+        for (uint256 i = 0; i < length;) {
             _setupRole(_role, _addresses[i]);
             unchecked {
                 i++;
@@ -39,11 +39,9 @@ contract DonationHandlerRoles is AccessControl {
         }
     }
 
-    function _removeRoles(bytes32 _role, address[] calldata _addresses)
-        internal
-    {
+    function _removeRoles(bytes32 _role, address[] calldata _addresses) internal {
         uint256 length = _addresses.length;
-        for (uint256 i = 0; i < length; ) {
+        for (uint256 i = 0; i < length;) {
             revokeRole(_role, _addresses[i]);
             unchecked {
                 i++;
@@ -93,8 +91,9 @@ contract DonationHandlerRoles is AccessControl {
     }
 
     function _checkDonationRecipient(address _recipient) internal view {
-        if (!hasRole(DONATION_RECIPIENT, _recipient))
+        if (!hasRole(DONATION_RECIPIENT, _recipient)) {
             revert RecipientNotAccepted();
+        }
     }
 
     function addDonationRecipient(address[] calldata _recipients) external {
@@ -107,11 +106,7 @@ contract DonationHandlerRoles is AccessControl {
         _removeRoles(DONATION_RECIPIENT, _recipients);
     }
 
-    function isDonationRecipient(address _recipient)
-        external
-        view
-        returns (bool)
-    {
+    function isDonationRecipient(address _recipient) external view returns (bool) {
         return hasRole(DONATION_RECIPIENT, _recipient);
     }
 

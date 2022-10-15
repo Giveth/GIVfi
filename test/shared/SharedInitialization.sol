@@ -38,11 +38,6 @@ contract SharedInitialization is Test {
     }
 
     function _initializeDonationHandler() internal {
-        donationHandler.initialize(
-            acceptedToken,
-            donationRecipient,
-            feeReceiver,
-            admins
-        );
+        donationHandler.initialize(acceptedToken, donationRecipient, feeReceiver, admins);
     }
 }

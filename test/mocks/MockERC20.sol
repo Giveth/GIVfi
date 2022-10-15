@@ -5,12 +5,12 @@ import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/tok
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract MockERC20 is Initializable, ERC20 {
-  constructor(string memory _name, string memory _symbol) {
-    _init(_name, _symbol);
-    _mint(msg.sender, 1_000_000*1e18);
-  }
+    constructor(string memory _name, string memory _symbol) {
+        _init(_name, _symbol);
+        _mint(msg.sender, 1_000_000 * 1e18);
+    }
 
-  function _init(string memory _name, string memory _symbol) internal initializer {
-    __ERC20_init(_name, _symbol);
-  }
+    function _init(string memory _name, string memory _symbol) internal initializer {
+        __ERC20_init(_name, _symbol);
+    }
 }

@@ -19,7 +19,7 @@ contract DonationHandlerInitializationTest is SharedInitialization {
         assertTrue(donationHandler.isAdmin(address(3)));
     }
 
-     function testFail_initializationSecondTime() public {
+    function testFail_initializationSecondTime() public {
         _initializeDonationHandler();
         _initializeDonationHandler();
     }
