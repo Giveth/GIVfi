@@ -4,6 +4,9 @@ pragma solidity ^0.8.17;
 import {AccessControlUpgradeable as AccessControl} from
     "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
+/// @title DonationHandlerRoles
+/// @author @Kurt for Giveth
+/// @notice This contract defines the roles used by the DonationHandler contract.
 contract DonationHandlerRoles is AccessControl {
     bytes32 public constant ACCEPTED_TOKEN = keccak256("ACCEPTED_TOKEN");
     bytes32 public constant DONATION_RECIPIENT = keccak256("DONATION_RECIPIENT");
