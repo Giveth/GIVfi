@@ -13,25 +13,25 @@ contract DonationHandlerTest is SharedInitialization {
     // Donate
 
     function testFail_donateWithoutApproval() public {
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 0);
+        donationHandler.donate(address(allowedToken), address(1), 100, 0);
     }
 
     function test_donateWithoutFee() public {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 0);
+        donationHandler.donate(address(allowedToken), address(1), 100, 0);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 100);
     }
 
-    function _donateWithFee() internal {
+    function _donate() internal {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 1e17); // 10% fee
+        donationHandler.donate(address(allowedToken), address(1), 100, 1e17); // 10% fee
 
         allowedToken2.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken2), address(1), 100, 1e17); // 10% fee
+        donationHandler.donate(address(allowedToken2), address(1), 100, 1e17); // 10% fee
     }
 
-    function test_donateWithFee() public {
-        _donateWithFee();
+    function test_donate() public {
+        _donate();
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 90);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 10);
 
@@ -41,79 +41,79 @@ contract DonationHandlerTest is SharedInitialization {
         assertEq(balances[1], 90);
     }
 
-    function test_donateWithFeeHundred() public {
+    function test_donateHundred() public {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 1e18);
+        donationHandler.donate(address(allowedToken), address(1), 100, 1e18);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 100);
     }
 
-    function testFail_donateWithFeeTooHigh() public {
+    function testFail_donateTooHigh() public {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 1.1e18); // 110% fee
+        donationHandler.donate(address(allowedToken), address(1), 100, 1.1e18); // 110% fee
     }
 
-    function testFail_donateWithFeeTooLow() public {
-        donationHandler.setMinFee(1e17);
+    function testFail_donateTooLow() public {
+        donationHandler.setMinFee(1e17); // min fee: 10%
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(1), 100, 1e16); // 1% fee
+        donationHandler.donate(address(allowedToken), address(1), 100, 1e16); // 1% fee
     }
 
     function testFail_donateToWrongRecipient() public {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(allowedToken), address(2), 100, 0);
+        donationHandler.donate(address(allowedToken), address(2), 100, 0);
     }
 
     function testFail_donateWithWrongToken() public {
         notAllowedToken.approve(address(donationHandler), 100);
-        donationHandler.donateWithFee(address(notAllowedToken), address(1), 100, 0);
+        donationHandler.donate(address(notAllowedToken), address(1), 100, 0);
     }
 
     // withdraw
 
     function test_withdraw() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(1));
         donationHandler.withdraw(address(allowedToken), 80);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 10);
         assertEq(allowedToken.balanceOf(address(1)), 80);
     }
 
-    function test_withdrawAll() public {
-        _donateWithFee();
+    function test_withdrawMany() public {
+        _donate();
         vm.prank(address(1));
-        donationHandler.withdrawAll(acceptedToken);
+        donationHandler.withdrawMany(acceptedToken);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
         assertEq(allowedToken.balanceOf(address(1)), 90);
         assertEq(allowedToken2.balanceOf(address(1)), 90);
     }
 
     function testFail_withdrawTooMuch() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(1));
         donationHandler.withdraw(address(allowedToken), 100);
     }
 
     function testFail_withdrawWrongToken() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(1));
         donationHandler.withdraw(address(notAllowedToken), 80);
     }
 
     function testFail_withdrawWrongRecipient() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(2));
         donationHandler.withdraw(address(allowedToken), 80);
     }
 
     function testFail_withdrawFeeNotAdmin() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(4));
         donationHandler.withdrawFee(address(allowedToken));
     }
 
     function test_withdrawFee() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(2));
         donationHandler.withdrawFee(address(allowedToken));
         assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 0);
@@ -121,7 +121,7 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_withdrawFeeMany() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(2));
         donationHandler.withdrawFeeMany(acceptedToken);
         assertEq(allowedToken.balanceOf(address(2)), 10);
@@ -131,7 +131,7 @@ contract DonationHandlerTest is SharedInitialization {
     // distribute
 
     function test_distribute() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(8));
         donationHandler.distribute(acceptedToken, address(1));
         assertEq(allowedToken.balanceOf(address(1)), 90);
@@ -139,7 +139,7 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_distributeMany() public {
-        _donateWithFee();
+        _donate();
         vm.prank(address(8));
         donationHandler.distributeMany(acceptedToken, donationRecipient);
         assertEq(allowedToken.balanceOf(address(1)), 90);
