@@ -13,6 +13,9 @@ contract DonationHandlerRoles is AccessControl {
     bytes32 public constant FEE_RECEIVER = keccak256("FEE_RECEIVER");
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
+    /// @notice special address which represents the native network currency
+    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     /// @notice Initializes the contract settings by adding all addresses to their roles.
     /// @param _acceptedToken The list of accepted tokens.
     /// @param _donationRecipient The list of donation recipients.
@@ -35,6 +38,8 @@ contract DonationHandlerRoles is AccessControl {
         _addRoles(DONATION_RECIPIENT, _donationRecipient);
         _addRoles(FEE_RECEIVER, _feeReceiver);
         _addRoles(ADMIN, _admins);
+
+        _setupRole(ACCEPTED_TOKEN, NATIVE);
     }
 
     /// @notice Internal function. Adds a list of addresses to a role.

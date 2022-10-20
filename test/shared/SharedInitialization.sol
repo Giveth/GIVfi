@@ -7,6 +7,7 @@ import "../mocks/MockERC20.sol";
 
 contract SharedInitialization is Test {
     address deployer = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
+    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     DonationHandler public donationHandler;
     MockERC20 public allowedToken;
