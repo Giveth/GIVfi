@@ -56,7 +56,7 @@ Before deploying to one of the networks, please adjust the DonationHandler initi
 Deploys the DonationHandler, a ProxyAdmin and a TransparentUpgradeableProxy to your local anvil chain. Please run `make anvil` before deploying.
 
 ## Security
-To use slither, you'll first need to install install [slither](https://github.com/crytic/slither#how-to-install).
+To use slither, you'll first need to install [slither](https://github.com/crytic/slither#how-to-install).
 
 Then, you can run:
 
