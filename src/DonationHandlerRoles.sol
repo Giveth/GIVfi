@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import {AccessControlUpgradeable as AccessControl} from
     "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
