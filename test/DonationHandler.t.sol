@@ -19,10 +19,7 @@ contract DonationHandlerTest is SharedInitialization {
     function test_donateWithoutFee() public {
         allowedToken.approve(address(donationHandler), 100);
         donationHandler.donate(address(allowedToken), address(1), 100, 0);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            100
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 100);
     }
 
     function _donate() internal {
@@ -35,22 +32,10 @@ contract DonationHandlerTest is SharedInitialization {
 
     function test_donate() public {
         _donate();
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            90
-        );
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken),
-                address(donationHandler)
-            ),
-            10
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 90);
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 10);
 
-        uint256[] memory balances = donationHandler.balancesOf(
-            acceptedToken,
-            address(1)
-        );
+        uint256[] memory balances = donationHandler.balancesOf(acceptedToken, address(1));
         assertEq(balances.length, 2);
         assertEq(balances[0], 90);
         assertEq(balances[1], 90);
@@ -59,17 +44,8 @@ contract DonationHandlerTest is SharedInitialization {
     function test_donateHundred() public {
         allowedToken.approve(address(donationHandler), 100);
         donationHandler.donate(address(allowedToken), address(1), 100, 1e18);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            0
-        );
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken),
-                address(donationHandler)
-            ),
-            100
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 100);
     }
 
     function testFail_donateTooHigh() public {
@@ -96,10 +72,7 @@ contract DonationHandlerTest is SharedInitialization {
     function test_donateEth() public {
         donationHandler.donate{value: 100}(NATIVE, address(1), 100, 1e17); // 10% fee
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
-        assertEq(
-            donationHandler.balanceOf(NATIVE, address(donationHandler)),
-            10
-        );
+        assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
     }
 
     // withdraw
@@ -108,10 +81,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(1));
         donationHandler.withdraw(address(allowedToken), 80);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            10
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 10);
         assertEq(allowedToken.balanceOf(address(1)), 80);
     }
 
@@ -119,10 +89,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(1));
         donationHandler.withdrawMany(acceptedToken);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            0
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
         assertEq(allowedToken.balanceOf(address(1)), 90);
         assertEq(allowedToken2.balanceOf(address(1)), 90);
     }
@@ -155,13 +122,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(2));
         donationHandler.withdrawFee(address(allowedToken));
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken),
-                address(donationHandler)
-            ),
-            0
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 0);
         assertEq(allowedToken.balanceOf(address(2)), 10);
     }
 
@@ -176,10 +137,7 @@ contract DonationHandlerTest is SharedInitialization {
     function test_WithdrawEth() public {
         donationHandler.donate{value: 100}(NATIVE, address(1), 100, 1e17); // 10% fee
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
-        assertEq(
-            donationHandler.balanceOf(NATIVE, address(donationHandler)),
-            10
-        );
+        assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
 
         vm.prank(address(1));
         uint256 balanceBefore = address(1).balance;

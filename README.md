@@ -13,6 +13,8 @@
 # GIVfi-donation-handler
 The DonationHandler can be used to transfer whitelisted assets to whitelisted addresses. Furthermore, the donator can specify a fee that the protocol or the fee receiver will receive. All assets are hold by the DonationHandler contract and can be withdrawn later by the recipients.
 
+Special token address `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` represents the native currency of the network. Use this address to donate and withdraw the native currency. The address is whitelisted by default.
+
 ## Requirements
 ### Foundry
 Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.
