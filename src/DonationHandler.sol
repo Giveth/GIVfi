@@ -148,8 +148,11 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard {
     function distributeMany(address[] calldata _token, address[] calldata _to) external nonReentrant {
         // TODO: maybe restrict to admins
         uint256 length = _to.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length;) {
             _withdrawAll(_token, _to[i], _to[i]);
+            unchecked {
+                i++;
+            }
         }
     }
 
