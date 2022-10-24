@@ -6,6 +6,7 @@ import {SafeERC20Upgradeable as SafeERC20} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable as ReentrancyGuard} from
     "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {MulticallUpgradeable as Multicall} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "./DonationHandlerRoles.sol";
 
 /// @title DonationHandler
@@ -31,7 +32,7 @@ import "./DonationHandlerRoles.sol";
 ///
 /// The donation balance of one token can be checked by calling the balanceOf function.
 /// The donation balance of multiple token can be checked by calling the balancesOf function.
-contract DonationHandler is DonationHandlerRoles, ReentrancyGuard {
+contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     using SafeERC20 for IERC20;
 
     /// @notice 1e18 represents 100%, 1e16 represents 1%
@@ -55,6 +56,8 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard {
         address[] calldata _admins
     ) public initializer {
         __DonationHandlerRoles_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins);
+        __ReentrancyGuard_init();
+        __Multicall_init();
     }
 
     /// @notice Donate tokens to a recipient. The fee is deducted from the donation amount.

@@ -41,4 +41,10 @@ contract SharedInitialization is Test {
     function _initializeDonationHandler() internal {
         donationHandler.initialize(acceptedToken, donationRecipient, feeReceiver, admins);
     }
+
+    // Events
+    event FeeRegistered(address indexed token, address indexed from, uint256 amount);
+    event DonationRegistered(address indexed token, address indexed from, address indexed recipient, uint256 amount);
+    event Withdraw(address indexed token, address indexed from, address indexed to, uint256 amount);
+    event MinFeeSet(uint256 minFee);
 }
