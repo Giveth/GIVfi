@@ -15,7 +15,7 @@ import "./DonationHandlerRoles.sol";
 /// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
 /// A donation fee can be set by the user. The fee is paid in addition to the donation amount.
 /// The donation fee is the amount the donor pays to the fee receiver (protocol)
-/// The donation fee can be set by the user and is limited by the minFee and maxFee.
+/// The donation fee can be set by the user and is limited by the minFee.
 /// The min fee is set by default to 0 and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
 ///
