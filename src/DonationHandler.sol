@@ -42,11 +42,13 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
 
+    /// @notice struct stores recipient and amount of a donation
     struct RecipientInfo {
         address recipient;
         uint256 amount;
     }
 
+    /// @notice struct stores the informations of a donation with multiple receipients
     struct Donation {
         address token;
         uint256 fee;
