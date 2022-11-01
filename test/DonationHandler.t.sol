@@ -24,7 +24,7 @@ contract DonationHandlerTest is SharedInitialization {
 
     function _donate() internal {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 90, 10); 
+        donationHandler.donate(address(allowedToken), address(1), 90, 10);
 
         allowedToken2.approve(address(donationHandler), 100);
         donationHandler.donate(address(allowedToken2), address(1), 90, 10);
