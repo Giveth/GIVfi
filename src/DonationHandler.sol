@@ -15,9 +15,9 @@ import "./DonationHandlerRoles.sol";
 /// This contract is build to use with proxies.
 ///
 /// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
-/// A donation fee can be set by the user. The fee is taken from the donation amount.
-/// The donation fee is a percentage of the donation amount where 1e18 is 100%, 1e17 10%, etc..
-/// The donation fee can be set by the user and is limited by the minFee and maxFee.
+/// A donation fee can be set by the user. The fee is paid in addition to the donation amount.
+/// The donation fee is the amount the donor pays to the fee receiver (protocol)
+/// The donation fee can be set by the user and is limited by the minFee.
 /// The min fee is set by default to 0 and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
 ///
@@ -44,6 +44,19 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
 
+    /// @notice struct stores recipient and amount of a donation
+    struct RecipientInfo {
+        address recipient;
+        uint256 amount;
+    }
+
+    /// @notice struct stores the informations of a donation with multiple receipients
+    struct Donation {
+        address token;
+        uint256 fee;
+        RecipientInfo[] recipients;
+    }
+
     /// @notice Initialize the contract.
     /// @param _acceptedToken Array of accepted tokens
     /// @param _donationReceiver Array of donation receivers
@@ -60,34 +73,75 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
         __Multicall_init();
     }
 
-    /// @notice Donate tokens to a recipient. The fee is deducted from the donation amount.
+    /// @notice Donate tokens to a recipient. The fee added to the donation amount.
     /// @param _token Address of the token to donate
     /// @param _recipient Address of the recipient
     /// @param _amount Amount of tokens to donate
     /// @param _fee Fee to be paid to the fee receiver (protocol)
     function donate(address _token, address _recipient, uint256 _amount, uint256 _fee) external payable nonReentrant {
-        if (_fee > HUNDRED) revert FeeTooHigh();
-        if (_fee < minFee) revert FeeTooLow();
         if (_amount == 0) revert InvalidAmount();
 
-        _validateDonation(_token, _recipient);
+        uint256 totalDonationAmount = _amount + _fee;
 
-        if (_token != NATIVE) {
-            _transfer(_token, _amount);
-        } else {
-            if (msg.value != _amount) revert InvalidAmount();
+        _checkToken(_token);
+        _checkDonationRecipient(_recipient);
+
+        _registerDonation(_token, _recipient, _amount);
+        _handleFee(_token, totalDonationAmount, _fee);
+
+        _transfer(_token, totalDonationAmount);
+    }
+
+    /// @notice Donate a list of donations.
+    /// @param _donations Array of donations. Each donation contains a token, a fee and a list of recipients. Each recipient contains an address and an amount.
+    function donateMany(Donation[] memory _donations) external payable nonReentrant {
+        uint256 donationLength = _donations.length;
+
+        for (uint256 i; i < donationLength;) {
+            Donation memory donation = _donations[i];
+
+            _checkToken(donation.token);
+
+            uint256 totalDonationAmount = donation.fee;
+            uint256 recipientLength = donation.recipients.length;
+
+            for (uint256 j; j < recipientLength;) {
+                RecipientInfo memory recipientInfo = donation.recipients[j];
+
+                _checkDonationRecipient(recipientInfo.recipient);
+
+                if (recipientInfo.amount == 0) revert InvalidAmount();
+                totalDonationAmount += recipientInfo.amount;
+
+                _registerDonation(donation.token, recipientInfo.recipient, recipientInfo.amount);
+
+                unchecked {
+                    j++;
+                }
+            }
+
+            _handleFee(donation.token, totalDonationAmount, donation.fee);
+            _transfer(donation.token, totalDonationAmount);
+
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    /// @notice registers the fee (if fee > 0) and checks if the fee amount is valid (only if the minFee is > 0)
+    /// @param _token Address of the token
+    /// @param _totalDonationAmount Total donation amount
+    /// @param _fee Fee to be paid to the fee receiver (protocol)
+    function _handleFee(address _token, uint256 _totalDonationAmount, uint256 _fee) internal {
+        if (_fee > 0) {
+            _registerFee(_token, _fee);
         }
 
-        if (_fee == 0) {
-            _registerDonation(_token, _recipient, _amount);
-        } else if (_fee == HUNDRED) {
-            _registerFee(_token, _amount);
-        } else {
-            uint256 feeAmount = (_amount * _fee) / HUNDRED;
-            uint256 donationAmount = _amount - feeAmount;
-
-            _registerDonation(_token, _recipient, donationAmount);
-            _registerFee(_token, feeAmount);
+        if (minFee > 0) {
+            if ((_fee * HUNDRED) / _totalDonationAmount < minFee) {
+                revert FeeTooLow();
+            }
         }
     }
 
@@ -108,19 +162,15 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
         emit DonationRegistered(_token, msg.sender, _recipient, _amount);
     }
 
-    /// @notice Internal function. Validates a donation by checking if token and donation recipient are whitelisted.
-    /// @param _token Address of the token
-    /// @param _recipient Address of the recipient
-    function _validateDonation(address _token, address _recipient) internal view {
-        _checkToken(_token);
-        _checkDonationRecipient(_recipient);
-    }
-
     /// @notice Internal function. Transfers tokens from the sender to the contract.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
     function _transfer(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        if (_token != NATIVE) {
+            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        } else {
+            if (msg.value != _amount) revert InvalidAmount();
+        }
     }
 
     /// @notice Withdraw tokens from the contract to msg.sender.

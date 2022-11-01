@@ -35,8 +35,8 @@ contract DonationHandlerMulticallTest is SharedInitialization {
 
         bytes[] memory data = new bytes[](2);
 
-        data[0] = abi.encodeWithSelector(donationHandler.donate.selector, address(allowedToken), address(1), 100, 1e17);
-        data[1] = abi.encodeWithSelector(donationHandler.donate.selector, address(allowedToken2), address(1), 200, 9e17);
+        data[0] = abi.encodeWithSelector(donationHandler.donate.selector, address(allowedToken), address(1), 90, 10);
+        data[1] = abi.encodeWithSelector(donationHandler.donate.selector, address(allowedToken2), address(1), 20, 180);
 
         vm.expectEmit(true, true, true, true, address(donationHandler));
         emit DonationRegistered(address(allowedToken), address(this), address(1), 90);
