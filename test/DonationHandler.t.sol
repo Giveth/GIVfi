@@ -24,10 +24,10 @@ contract DonationHandlerTest is SharedInitialization {
 
     function _donate() internal {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 1e17); // 10% fee
+        donationHandler.donate(address(allowedToken), address(1), 90, 10); 
 
         allowedToken2.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken2), address(1), 100, 1e17); // 10% fee
+        donationHandler.donate(address(allowedToken2), address(1), 90, 10);
     }
 
     function test_donate() public {
@@ -41,22 +41,10 @@ contract DonationHandlerTest is SharedInitialization {
         assertEq(balances[1], 90);
     }
 
-    function test_donateHundred() public {
-        allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 1e18);
-        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
-        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 100);
-    }
-
-    function testFail_donateTooHigh() public {
-        allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 1.1e18); // 110% fee
-    }
-
     function testFail_donateTooLow() public {
         donationHandler.setMinFee(1e17); // min fee: 10%
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 1e16); // 1% fee
+        donationHandler.donate(address(allowedToken), address(1), 100, 1); // 1% fee
     }
 
     function testFail_donateToWrongRecipient() public {
@@ -70,9 +58,34 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_donateEth() public {
-        donationHandler.donate{value: 100}(NATIVE, address(1), 100, 1e17); // 10% fee
+        donationHandler.donate{value: 100}(NATIVE, address(1), 90, 10);
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
         assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
+    }
+
+    function test_donateMany() public {
+        DonationHandler.RecipientInfo[] memory receiptsToken1 = new DonationHandler.RecipientInfo[](2);
+        receiptsToken1[0] = DonationHandler.RecipientInfo(address(1), 90);
+        receiptsToken1[1] = DonationHandler.RecipientInfo(address(1), 90);
+
+        DonationHandler.RecipientInfo[] memory receiptsToken2 = new DonationHandler.RecipientInfo[](2);
+        receiptsToken2[0] = DonationHandler.RecipientInfo(address(1), 90);
+        receiptsToken2[1] = DonationHandler.RecipientInfo(address(1), 90);
+
+        DonationHandler.Donation[] memory donations = new DonationHandler.Donation[](2);
+        donations[0] = DonationHandler.Donation(address(allowedToken), 20, receiptsToken1);
+        donations[1] = DonationHandler.Donation(address(allowedToken2), 20, receiptsToken2);
+
+        allowedToken.approve(address(donationHandler), 200);
+        allowedToken2.approve(address(donationHandler), 200);
+
+        donationHandler.donateMany(donations);
+
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 180);
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 20);
+
+        assertEq(donationHandler.balanceOf(address(allowedToken2), address(1)), 180);
+        assertEq(donationHandler.balanceOf(address(allowedToken2), address(donationHandler)), 20);
     }
 
     // withdraw
@@ -135,7 +148,7 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_WithdrawEth() public {
-        donationHandler.donate{value: 100}(NATIVE, address(1), 100, 1e17); // 10% fee
+        donationHandler.donate{value: 100}(NATIVE, address(1), 90, 10);
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
         assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
 

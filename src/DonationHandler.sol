@@ -2,10 +2,8 @@
 pragma solidity 0.8.17;
 
 import {IERC20Upgradeable as IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20Upgradeable as SafeERC20} from
-    "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import {ReentrancyGuardUpgradeable as ReentrancyGuard} from
-    "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {SafeERC20Upgradeable as SafeERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {ReentrancyGuardUpgradeable as ReentrancyGuard} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {MulticallUpgradeable as Multicall} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "./DonationHandlerRoles.sol";
 
@@ -15,8 +13,8 @@ import "./DonationHandlerRoles.sol";
 /// This contract is build to use with proxies.
 ///
 /// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
-/// A donation fee can be set by the user. The fee is taken from the donation amount.
-/// The donation fee is a percentage of the donation amount where 1e18 is 100%, 1e17 10%, etc..
+/// A donation fee can be set by the user. The fee is paid in addition to the donation amount.
+/// The donation fee is the amount the donor pays to the fee receiver (protocol)
 /// The donation fee can be set by the user and is limited by the minFee and maxFee.
 /// The min fee is set by default to 0 and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
@@ -44,6 +42,17 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
 
+    struct RecipientInfo {
+        address recipient;
+        uint256 amount;
+    }
+
+    struct Donation {
+        address token;
+        uint256 fee;
+        RecipientInfo[] recipients;
+    }
+
     /// @notice Initialize the contract.
     /// @param _acceptedToken Array of accepted tokens
     /// @param _donationReceiver Array of donation receivers
@@ -55,39 +64,97 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
         address[] calldata _feeReceiver,
         address[] calldata _admins
     ) public initializer {
-        __DonationHandlerRoles_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins);
+        __DonationHandlerRoles_init(
+            _acceptedToken,
+            _donationReceiver,
+            _feeReceiver,
+            _admins
+        );
         __ReentrancyGuard_init();
         __Multicall_init();
     }
 
-    /// @notice Donate tokens to a recipient. The fee is deducted from the donation amount.
+    /// @notice Donate tokens to a recipient. The fee added to the donation amount.
     /// @param _token Address of the token to donate
     /// @param _recipient Address of the recipient
     /// @param _amount Amount of tokens to donate
     /// @param _fee Fee to be paid to the fee receiver (protocol)
-    function donate(address _token, address _recipient, uint256 _amount, uint256 _fee) external payable nonReentrant {
-        if (_fee > HUNDRED) revert FeeTooHigh();
-        if (_fee < minFee) revert FeeTooLow();
+    function donate(
+        address _token,
+        address _recipient,
+        uint256 _amount,
+        uint256 _fee
+    ) external payable nonReentrant {
         if (_amount == 0) revert InvalidAmount();
 
-        _validateDonation(_token, _recipient);
+        uint256 totalDonationAmount = _amount + _fee;
 
-        if (_token != NATIVE) {
-            _transfer(_token, _amount);
-        } else {
-            if (msg.value != _amount) revert InvalidAmount();
+        _checkToken(_token);
+        _checkDonationRecipient(_recipient);
+
+        _registerDonation(_token, _recipient, _amount);
+        _handleFee(_token, totalDonationAmount, _fee);
+
+        _transfer(_token, totalDonationAmount);
+    }
+
+    /// @notice Donate a list of donations.
+    /// @param _donations Array of donations. Each donation contains a token, a fee and a list of recipients. Each recipient contains an address and an amount.
+    function donateMany(Donation[] memory _donations)
+        external
+        payable
+        nonReentrant
+    {
+        uint256 donationLength = _donations.length;
+
+        for (uint256 i; i < donationLength; ) {
+            Donation memory donation = _donations[i];
+
+            _checkToken(donation.token);
+
+            uint256 totalDonationAmount = donation.fee;
+            uint256 recipientLength = donation.recipients.length;
+
+            for (uint256 j; j < recipientLength; ) {
+                RecipientInfo memory recipientInfo = donation.recipients[j];
+
+                _checkDonationRecipient(recipientInfo.recipient);
+
+                if (recipientInfo.amount == 0) revert InvalidAmount();
+                totalDonationAmount += recipientInfo.amount;
+
+                _registerDonation(
+                    donation.token,
+                    recipientInfo.recipient,
+                    recipientInfo.amount
+                );
+
+                unchecked {
+                    j++;
+                }
+            }
+
+            _handleFee(donation.token, totalDonationAmount, donation.fee);
+            _transfer(donation.token, totalDonationAmount);
+
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    /// @notice registers the fee (if fee > 0) and checks if the fee amount is valid (only if the minFee is > 0)
+    /// @param _token Address of the token
+    /// @param _totalDonationAmount Total donation amount
+    /// @param _fee Fee to be paid to the fee receiver (protocol)
+    function _handleFee(address _token, uint256 _totalDonationAmount, uint256 _fee) internal {
+        if (_fee > 0) {
+            _registerFee(_token, _fee);
         }
 
-        if (_fee == 0) {
-            _registerDonation(_token, _recipient, _amount);
-        } else if (_fee == HUNDRED) {
-            _registerFee(_token, _amount);
-        } else {
-            uint256 feeAmount = (_amount * _fee) / HUNDRED;
-            uint256 donationAmount = _amount - feeAmount;
-
-            _registerDonation(_token, _recipient, donationAmount);
-            _registerFee(_token, feeAmount);
+        if (minFee > 0) {
+            if ((_fee * HUNDRED) / _totalDonationAmount < minFee)
+                revert FeeTooLow();
         }
     }
 
@@ -103,24 +170,24 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _token Address of the token
     /// @param _recipient Address of the recipient
     /// @param _amount Amount of tokens
-    function _registerDonation(address _token, address _recipient, uint256 _amount) internal {
+    function _registerDonation(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) internal {
         balances[_recipient][_token] += _amount;
         emit DonationRegistered(_token, msg.sender, _recipient, _amount);
-    }
-
-    /// @notice Internal function. Validates a donation by checking if token and donation recipient are whitelisted.
-    /// @param _token Address of the token
-    /// @param _recipient Address of the recipient
-    function _validateDonation(address _token, address _recipient) internal view {
-        _checkToken(_token);
-        _checkDonationRecipient(_recipient);
     }
 
     /// @notice Internal function. Transfers tokens from the sender to the contract.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
     function _transfer(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        if (_token != NATIVE) {
+            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        } else {
+            if (msg.value != _amount) revert InvalidAmount();
+        }
     }
 
     /// @notice Withdraw tokens from the contract to msg.sender.
@@ -140,7 +207,10 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice Distributes full amount of token arrays token from the contract to a recipient.
     /// @param _token Address array of the token
     /// @param _to Address of the recipient
-    function distribute(address[] calldata _token, address _to) external nonReentrant {
+    function distribute(address[] calldata _token, address _to)
+        external
+        nonReentrant
+    {
         // TODO: maybe restrict to admins
         _withdrawAll(_token, _to, _to);
     }
@@ -148,10 +218,13 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice Distributes full amount of token arrays token from the contract to an array of recipients.
     /// @param _token Address array of the token
     /// @param _to Address array of the recipients
-    function distributeMany(address[] calldata _token, address[] calldata _to) external nonReentrant {
+    function distributeMany(address[] calldata _token, address[] calldata _to)
+        external
+        nonReentrant
+    {
         // TODO: maybe restrict to admins
         uint256 length = _to.length;
-        for (uint256 i = 0; i < length;) {
+        for (uint256 i = 0; i < length; ) {
             _withdrawAll(_token, _to[i], _to[i]);
             unchecked {
                 i++;
@@ -179,10 +252,14 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _token Address array of the token to withdraw
     /// @param _from Address of the spender
     /// @param _to Address of the recipient
-    function _withdrawAll(address[] memory _token, address _from, address _to) internal {
+    function _withdrawAll(
+        address[] memory _token,
+        address _from,
+        address _to
+    ) internal {
         uint256 length = _token.length;
 
-        for (uint256 i = 0; i < length;) {
+        for (uint256 i = 0; i < length; ) {
             uint256 amount = balances[_from][_token[i]];
 
             if (amount > 0) {
@@ -200,12 +277,17 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _from Address of the spender
     /// @param _to Address of the recipient
     /// @param _amount Amount of tokens to withdraw
-    function _withdraw(address _token, address _from, address _to, uint256 _amount) internal {
+    function _withdraw(
+        address _token,
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal {
         if (_amount > balances[_from][_token]) revert InsufficientBalance();
 
         balances[_from][_token] -= _amount;
         if (_token == NATIVE) {
-            (bool success,) = payable(_to).call{value: _amount}("");
+            (bool success, ) = payable(_to).call{value: _amount}("");
             if (!success) revert TransferFailed();
         } else {
             IERC20(_token).safeTransfer(_to, _amount);
@@ -218,7 +300,11 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _token Address of the token
     /// @param _user Address of the user
     /// @return Token balance of the user
-    function balanceOf(address _token, address _user) external view returns (uint256) {
+    function balanceOf(address _token, address _user)
+        external
+        view
+        returns (uint256)
+    {
         return balances[_user][_token];
     }
 
@@ -226,11 +312,15 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _token Address array of the token
     /// @param _user Address of the user
     /// @return Uint256 array. Token balances of the user
-    function balancesOf(address[] calldata _token, address _user) external view returns (uint256[] memory) {
+    function balancesOf(address[] calldata _token, address _user)
+        external
+        view
+        returns (uint256[] memory)
+    {
         uint256 length = _token.length;
         uint256[] memory result = new uint256[](length);
 
-        for (uint256 i = 0; i < length;) {
+        for (uint256 i = 0; i < length; ) {
             result[i] = balances[_user][_token[i]];
             unchecked {
                 i++;
@@ -267,21 +357,35 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param token The token address
     /// @param from The address of the sender
     /// @param amount The amount of tokens
-    event FeeRegistered(address indexed token, address indexed from, uint256 amount);
+    event FeeRegistered(
+        address indexed token,
+        address indexed from,
+        uint256 amount
+    );
 
     /// @notice Emitted when a donation is registered
     /// @param token The token address
     /// @param from The address of the sender
     /// @param recipient The address of the recipient
     /// @param amount The amount of tokens
-    event DonationRegistered(address indexed token, address indexed from, address indexed recipient, uint256 amount);
+    event DonationRegistered(
+        address indexed token,
+        address indexed from,
+        address indexed recipient,
+        uint256 amount
+    );
 
     /// @notice Emitted when a withdrawal is made
     /// @param token The token address
     /// @param from The address of the sender
     /// @param to The address of the recipient
     /// @param amount The amount of tokens
-    event Withdraw(address indexed token, address indexed from, address indexed to, uint256 amount);
+    event Withdraw(
+        address indexed token,
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
 
     /// @notice Emitted when the minimum fee is set
     /// @param minFee The minimum fee
