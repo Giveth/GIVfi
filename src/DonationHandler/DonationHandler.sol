@@ -8,6 +8,7 @@ import {ReentrancyGuardUpgradeable as ReentrancyGuard} from
     "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {MulticallUpgradeable as Multicall} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "./DonationHandlerRoles.sol";
+import "./interface/IDonationHandler.sol";
 
 /// @title DonationHandler
 /// @author @Kurt for Giveth
@@ -32,7 +33,7 @@ import "./DonationHandlerRoles.sol";
 ///
 /// The donation balance of one token can be checked by calling the balanceOf function.
 /// The donation balance of multiple token can be checked by calling the balancesOf function.
-contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
+contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGuard, Multicall {
     using SafeERC20 for IERC20;
 
     /// @notice 1e18 represents 100%, 1e16 represents 1%
@@ -43,19 +44,6 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
 
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
-
-    /// @notice struct stores recipient and amount of a donation
-    struct RecipientInfo {
-        address recipient;
-        uint256 amount;
-    }
-
-    /// @notice struct stores the informations of a donation with multiple receipients
-    struct Donation {
-        address token;
-        uint256 fee;
-        RecipientInfo[] recipients;
-    }
 
     /// @notice Initialize the contract.
     /// @param _acceptedToken Array of accepted tokens

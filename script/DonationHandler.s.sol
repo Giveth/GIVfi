@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "./Config.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import "../src/DonationHandler.sol";
+import "../src/DonationHandler/DonationHandler.sol";
 
 contract DeployDonationHandler is Script, Config {
     function run() external {

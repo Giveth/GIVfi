@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./shared/SharedInitialization.sol";
+import "../src/DonationHandler/interface/IDonationHandler.sol";
 
 contract DonationHandlerTest is SharedInitialization {
     // acceptedToken[0] = address(allowedToken);
@@ -64,17 +65,17 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_donateMany() public {
-        DonationHandler.RecipientInfo[] memory receiptsToken1 = new DonationHandler.RecipientInfo[](2);
-        receiptsToken1[0] = DonationHandler.RecipientInfo(address(1), 90);
-        receiptsToken1[1] = DonationHandler.RecipientInfo(address(1), 90);
+        IDonationHandler.RecipientInfo[] memory receiptsToken1 = new IDonationHandler.RecipientInfo[](2);
+        receiptsToken1[0] = IDonationHandler.RecipientInfo(address(1), 90);
+        receiptsToken1[1] = IDonationHandler.RecipientInfo(address(1), 90);
 
-        DonationHandler.RecipientInfo[] memory receiptsToken2 = new DonationHandler.RecipientInfo[](2);
-        receiptsToken2[0] = DonationHandler.RecipientInfo(address(1), 90);
-        receiptsToken2[1] = DonationHandler.RecipientInfo(address(1), 90);
+        IDonationHandler.RecipientInfo[] memory receiptsToken2 = new IDonationHandler.RecipientInfo[](2);
+        receiptsToken2[0] = IDonationHandler.RecipientInfo(address(1), 90);
+        receiptsToken2[1] = IDonationHandler.RecipientInfo(address(1), 90);
 
-        DonationHandler.Donation[] memory donations = new DonationHandler.Donation[](2);
-        donations[0] = DonationHandler.Donation(address(allowedToken), 20, receiptsToken1);
-        donations[1] = DonationHandler.Donation(address(allowedToken2), 20, receiptsToken2);
+        IDonationHandler.Donation[] memory donations = new IDonationHandler.Donation[](2);
+        donations[0] = IDonationHandler.Donation(address(allowedToken), 20, receiptsToken1);
+        donations[1] = IDonationHandler.Donation(address(allowedToken2), 20, receiptsToken2);
 
         allowedToken.approve(address(donationHandler), 200);
         allowedToken2.approve(address(donationHandler), 200);
