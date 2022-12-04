@@ -13,8 +13,8 @@ contract DonationHandlerRoles is AccessControl {
     bytes32 public constant FEE_RECEIVER = keccak256("FEE_RECEIVER");
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
-    /// @notice special address which represents the native network currency
-    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    /// @notice special address which represents the native network currency. address(0) is used by gitcoin.
+    address public constant NATIVE = address(0); //0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /// @notice Initializes the contract settings by adding all addresses to their roles.
     /// @param _acceptedToken The list of accepted tokens.
@@ -29,6 +29,7 @@ contract DonationHandlerRoles is AccessControl {
     ) internal onlyInitializing {
         __AccessControl_init();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(DONATION_RECIPIENT, address(this)); // this contract is a donation recipient (for fees) by default
 
         _setRoleAdmin(ACCEPTED_TOKEN, ADMIN);
         _setRoleAdmin(DONATION_RECIPIENT, ADMIN);
