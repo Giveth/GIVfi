@@ -12,11 +12,7 @@ contract DonationHandlerTest is SharedInitialization {
 
     // Donate
 
-    function _encode(
-        address token,
-        uint256 amount,
-        address recipient
-    ) internal pure returns (bytes memory) {
+    function _encode(address token, uint256 amount, address recipient) internal pure returns (bytes memory) {
         return abi.encode(token, amount, recipient);
     }
 
@@ -40,15 +36,9 @@ contract DonationHandlerTest is SharedInitialization {
 
     function test_donate() public {
         _donate();
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            90
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 90);
 
-        uint256[] memory balances = donationHandler.balancesOf(
-            acceptedToken,
-            address(1)
-        );
+        uint256[] memory balances = donationHandler.balancesOf(acceptedToken, address(1));
         assertEq(balances.length, 2);
         assertEq(balances[0], 90);
         assertEq(balances[1], 90);
@@ -86,29 +76,11 @@ contract DonationHandlerTest is SharedInitialization {
 
         donationHandler.vote(donation, deployer);
 
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            180
-        );
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken),
-                address(donationHandler)
-            ),
-            20
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 180);
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 20);
 
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken2), address(1)),
-            180
-        );
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken2),
-                address(donationHandler)
-            ),
-            20
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken2), address(1)), 180);
+        assertEq(donationHandler.balanceOf(address(allowedToken2), address(donationHandler)), 20);
     }
 
     // withdraw
@@ -117,10 +89,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(1));
         donationHandler.withdraw(address(allowedToken), 90);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            0
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
         assertEq(allowedToken.balanceOf(address(1)), 90);
     }
 
@@ -128,10 +97,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(1));
         donationHandler.withdrawMany(acceptedToken);
-        assertEq(
-            donationHandler.balanceOf(address(allowedToken), address(1)),
-            0
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
         assertEq(allowedToken.balanceOf(address(1)), 90);
         assertEq(allowedToken2.balanceOf(address(1)), 90);
     }
@@ -164,13 +130,7 @@ contract DonationHandlerTest is SharedInitialization {
         _donate();
         vm.prank(address(2));
         donationHandler.withdrawFee(address(allowedToken));
-        assertEq(
-            donationHandler.balanceOf(
-                address(allowedToken),
-                address(donationHandler)
-            ),
-            0
-        );
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 0);
         assertEq(allowedToken.balanceOf(address(2)), 10);
     }
 
@@ -189,10 +149,7 @@ contract DonationHandlerTest is SharedInitialization {
         donationHandler.vote{value: 100}(donation, deployer);
 
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
-        assertEq(
-            donationHandler.balanceOf(NATIVE, address(donationHandler)),
-            10
-        );
+        assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
 
         vm.prank(address(1));
         uint256 balanceBefore = address(1).balance;
