@@ -12,11 +12,10 @@ import "./gitcoin/IVotingStrategy.sol";
 /// @notice This contract is used to handle donations
 /// This contract is build to use with proxies.
 ///
-/// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
-/// A donation fee can be set by the user. The fee is paid in addition to the donation amount.
-/// The donation fee is the amount the donor pays to the fee receiver (protocol)
-/// The donation fee can be set by the user and is limited by the minFee.
-/// The min fee is set by default to 0 and can be changed by the protocol admins.
+/// The user can donate whitelisted token to whitelisted recipients by calling the vote function.
+///
+/// The fee is deducted from the users donation, assigned to the contracts address and can be withdrawn by a fee receiver.
+/// The min fee is set during initialization and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
 ///
 /// The user can withdraw the donation of a single token by calling the withdraw function.
@@ -54,6 +53,7 @@ contract DonationHandler is
     /// @param _donationReceiver Array of donation receivers
     /// @param _feeReceiver Array of fee receivers
     /// @param _admins Array of admins
+    /// @param _minFee Minimum donation fee
     function initialize(
         address[] calldata _acceptedToken,
         address[] calldata _donationReceiver,
@@ -81,6 +81,9 @@ contract DonationHandler is
         }
     }
 
+    /// @notice Donate(vote) to a whitelisted recipient.
+    /// @param encodedVotes Array of donations
+    /// @param voterAddress Address of the voter
     function vote(
         bytes[] calldata encodedVotes,
         address voterAddress
@@ -299,18 +302,24 @@ contract DonationHandler is
         _setMinFee(_minFee);
     }
 
+    /// @notice Internal function. Set minimum donation fee. Emits MinFeeSet event.
+    /// @param _minFee Minimum donation fee
     function _setMinFee(uint256 _minFee) internal {
         if (_minFee > HUNDRED) revert FeeTooHigh();
         minFee = _minFee;
         emit MinFeeSet(_minFee);
     }
 
+    /// @notice Enable/Disable token whitelist. Can only be called by an Admin. Emits IsTokenWhitelistActiveSet event.
+    /// @param _isTokenWhitelistActive Enable/Disable token whitelist
     function setIsTokenWhitelistActive(bool _isTokenWhitelistActive) external {
         _checkAdmin(msg.sender);
         isTokenWhitelistActive = _isTokenWhitelistActive;
         emit IsTokenWhitelistActiveSet(_isTokenWhitelistActive);
     }
 
+    /// @notice Enable/Disable recipient whitelist. Can only be called by an Admin. Emits IsRecipientWhitelistActiveSet event.
+    /// @param _isRecipientWhitelistActive Enable/Disable recipient whitelist
     function setIsRecipientWhitelistActive(
         bool _isRecipientWhitelistActive
     ) external {
