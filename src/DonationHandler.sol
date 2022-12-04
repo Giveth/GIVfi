@@ -6,19 +6,18 @@ import {SafeERC20Upgradeable as SafeERC20} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable as ReentrancyGuard} from
     "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {MulticallUpgradeable as Multicall} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "./DonationHandlerRoles.sol";
+import "./gitcoin/IVotingStrategy.sol";
 
 /// @title DonationHandler
 /// @author @Kurt for Giveth
 /// @notice This contract is used to handle donations
 /// This contract is build to use with proxies.
 ///
-/// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
-/// A donation fee can be set by the user. The fee is taken from the donation amount.
-/// The donation fee is a percentage of the donation amount where 1e18 is 100%, 1e17 10%, etc..
-/// The donation fee can be set by the user and is limited by the minFee and maxFee.
-/// The min fee is set by default to 0 and can be changed by the protocol admins.
+/// The user can donate whitelisted token to whitelisted recipients by calling the vote function.
+///
+/// The fee is deducted from the users donation, assigned to the contracts address and can be withdrawn by a fee receiver.
+/// The min fee is set during initialization and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
 ///
 /// The user can withdraw the donation of a single token by calling the withdraw function.
@@ -32,7 +31,7 @@ import "./DonationHandlerRoles.sol";
 ///
 /// The donation balance of one token can be checked by calling the balanceOf function.
 /// The donation balance of multiple token can be checked by calling the balancesOf function.
-contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
+contract DonationHandler is IVotingStrategy, DonationHandlerRoles, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice 1e18 represents 100%, 1e16 represents 1%
@@ -40,6 +39,9 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
 
     /// @notice Minimum donation fee. 0 by default
     uint256 public minFee;
+
+    bool public isTokenWhitelistActive;
+    bool public isRecipientWhitelistActive;
 
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
@@ -49,45 +51,74 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _donationReceiver Array of donation receivers
     /// @param _feeReceiver Array of fee receivers
     /// @param _admins Array of admins
+    /// @param _minFee Minimum donation fee
     function initialize(
         address[] calldata _acceptedToken,
         address[] calldata _donationReceiver,
         address[] calldata _feeReceiver,
-        address[] calldata _admins
+        address[] calldata _admins,
+        uint256 _minFee
     ) public initializer {
         __DonationHandlerRoles_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins);
         __ReentrancyGuard_init();
-        __Multicall_init();
-    }
 
-    /// @notice Donate tokens to a recipient. The fee is deducted from the donation amount.
-    /// @param _token Address of the token to donate
-    /// @param _recipient Address of the recipient
-    /// @param _amount Amount of tokens to donate
-    /// @param _fee Fee to be paid to the fee receiver (protocol)
-    function donate(address _token, address _recipient, uint256 _amount, uint256 _fee) external payable nonReentrant {
-        if (_fee > HUNDRED) revert FeeTooHigh();
-        if (_fee < minFee) revert FeeTooLow();
-        if (_amount == 0) revert InvalidAmount();
-
-        _validateDonation(_token, _recipient);
-
-        if (_token != NATIVE) {
-            _transfer(_token, _amount);
-        } else {
-            if (msg.value != _amount) revert InvalidAmount();
+        if (_acceptedToken.length > 0) {
+            isTokenWhitelistActive = true;
+        }
+        if (_donationReceiver.length > 0) {
+            isRecipientWhitelistActive = true;
         }
 
-        if (_fee == 0) {
-            _registerDonation(_token, _recipient, _amount);
-        } else if (_fee == HUNDRED) {
-            _registerFee(_token, _amount);
-        } else {
-            uint256 feeAmount = (_amount * _fee) / HUNDRED;
-            uint256 donationAmount = _amount - feeAmount;
+        if (_minFee > 0) {
+            _setMinFee(_minFee);
+        }
+    }
 
-            _registerDonation(_token, _recipient, donationAmount);
-            _registerFee(_token, feeAmount);
+    /// @notice Donate(vote) to a whitelisted recipient.
+    /// @param encodedVotes Array of donations
+    /// @param voterAddress Address of the voter
+    function vote(bytes[] calldata encodedVotes, address voterAddress)
+        external
+        payable
+        override
+        nonReentrant
+        isRoundContract
+    {
+        /// @dev iterate over multiple donations and transfer funds
+        uint256 length = encodedVotes.length;
+        uint256 msgValue = 0;
+
+        for (uint256 i = 0; i < length;) {
+            (address _token, uint256 _amount, address _grantAddress) =
+                abi.decode(encodedVotes[i], (address, uint256, address));
+
+            if (isTokenWhitelistActive) _checkToken(_token);
+            if (isRecipientWhitelistActive) {
+                _checkDonationRecipient(_grantAddress);
+            }
+
+            if (_token != NATIVE) {
+                _transfer(voterAddress, _token, _amount);
+            } else {
+                msgValue += _amount;
+            }
+
+            if (minFee > 0) {
+                uint256 fee = (_amount * minFee) / HUNDRED;
+
+                _registerDonation(_token, _grantAddress, _amount - fee);
+                _registerFee(_token, fee);
+            } else {
+                _registerDonation(_token, _grantAddress, _amount);
+            }
+
+            unchecked {
+                i++;
+            }
+        }
+
+        if (msgValue > msg.value) {
+            revert InvalidAmount();
         }
     }
 
@@ -108,19 +139,11 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
         emit DonationRegistered(_token, msg.sender, _recipient, _amount);
     }
 
-    /// @notice Internal function. Validates a donation by checking if token and donation recipient are whitelisted.
-    /// @param _token Address of the token
-    /// @param _recipient Address of the recipient
-    function _validateDonation(address _token, address _recipient) internal view {
-        _checkToken(_token);
-        _checkDonationRecipient(_recipient);
-    }
-
     /// @notice Internal function. Transfers tokens from the sender to the contract.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
-    function _transfer(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+    function _transfer(address _from, address _token, uint256 _amount) internal {
+        IERC20(_token).safeTransferFrom(_from, address(this), _amount);
     }
 
     /// @notice Withdraw tokens from the contract to msg.sender.
@@ -243,9 +266,31 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @param _minFee Minimum donation fee
     function setMinFee(uint256 _minFee) external {
         _checkAdmin(msg.sender);
+        _setMinFee(_minFee);
+    }
+
+    /// @notice Internal function. Set minimum donation fee. Emits MinFeeSet event.
+    /// @param _minFee Minimum donation fee
+    function _setMinFee(uint256 _minFee) internal {
         if (_minFee > HUNDRED) revert FeeTooHigh();
         minFee = _minFee;
         emit MinFeeSet(_minFee);
+    }
+
+    /// @notice Enable/Disable token whitelist. Can only be called by an Admin. Emits IsTokenWhitelistActiveSet event.
+    /// @param _isTokenWhitelistActive Enable/Disable token whitelist
+    function setIsTokenWhitelistActive(bool _isTokenWhitelistActive) external {
+        _checkAdmin(msg.sender);
+        isTokenWhitelistActive = _isTokenWhitelistActive;
+        emit IsTokenWhitelistActiveSet(_isTokenWhitelistActive);
+    }
+
+    /// @notice Enable/Disable recipient whitelist. Can only be called by an Admin. Emits IsRecipientWhitelistActiveSet event.
+    /// @param _isRecipientWhitelistActive Enable/Disable recipient whitelist
+    function setIsRecipientWhitelistActive(bool _isRecipientWhitelistActive) external {
+        _checkAdmin(msg.sender);
+        isRecipientWhitelistActive = _isRecipientWhitelistActive;
+        emit IsRecipientWhitelistActiveSet(_isRecipientWhitelistActive);
     }
 
     /// @notice Throws if passed fee is above 100%.
@@ -286,4 +331,12 @@ contract DonationHandler is DonationHandlerRoles, ReentrancyGuard, Multicall {
     /// @notice Emitted when the minimum fee is set
     /// @param minFee The minimum fee
     event MinFeeSet(uint256 minFee);
+
+    /// @notice Emitted when the token whitelist is set to active or inactive
+    /// @param isTokenWhitelistActive The token whitelist status
+    event IsTokenWhitelistActiveSet(bool isTokenWhitelistActive);
+
+    /// @notice Emitted when the recipient whitelist is set to active or inactive
+    /// @param isRecipientWhitelistActive The recipient whitelist status
+    event IsRecipientWhitelistActiveSet(bool isRecipientWhitelistActive);
 }
