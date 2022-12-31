@@ -23,7 +23,11 @@ contract DeployDonationHandler is Script, Config {
         );
 
         DonationHandler(address(proxy)).initialize(
-            config.getAcceptedTokens(), config.getDonationRecipients(), config.getFeeReceivers(), config.getAdmins()
+            config.getAcceptedTokens(),
+            config.getDonationRecipients(),
+            config.getFeeReceivers(),
+            config.getAdmins(),
+            config.getMinFee()
         );
 
         vm.stopBroadcast();

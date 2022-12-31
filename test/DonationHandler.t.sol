@@ -13,28 +13,31 @@ contract DonationHandlerTest is SharedInitialization {
 
     // Donate
 
-    function testFail_donateWithoutApproval() public {
-        donationHandler.donate(address(allowedToken), address(1), 100, 0);
+    function _encode(address token, uint256 amount, address recipient) internal pure returns (bytes memory) {
+        return abi.encode(token, amount, recipient);
     }
 
-    function test_donateWithoutFee() public {
-        allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 0);
-        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 100);
+    function testFail_donateWithoutApproval() public {
+        bytes[] memory donation = new bytes[](1);
+        donation[0] = _encode(address(allowedToken), 100, address(1));
+        donationHandler.vote(donation, deployer);
     }
 
     function _donate() internal {
-        allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 90, 10);
+        bytes[] memory donation = new bytes[](2);
 
+        donation[0] = _encode(address(allowedToken), 100, address(1));
+        donation[1] = _encode(address(allowedToken2), 100, address(1));
+
+        allowedToken.approve(address(donationHandler), 100);
         allowedToken2.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken2), address(1), 90, 10);
+
+        donationHandler.vote(donation, deployer);
     }
 
     function test_donate() public {
         _donate();
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 90);
-        assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 10);
 
         uint256[] memory balances = donationHandler.balancesOf(acceptedToken, address(1));
         assertEq(balances.length, 2);
@@ -42,45 +45,37 @@ contract DonationHandlerTest is SharedInitialization {
         assertEq(balances[1], 90);
     }
 
-    function testFail_donateTooLow() public {
-        donationHandler.setMinFee(1e17); // min fee: 10%
-        allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(1), 100, 1); // 1% fee
-    }
-
     function testFail_donateToWrongRecipient() public {
         allowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(allowedToken), address(2), 100, 0);
+        bytes[] memory donation = new bytes[](1);
+        donation[0] = _encode(address(allowedToken), 100, address(2));
+        donationHandler.vote(donation, deployer);
     }
 
     function testFail_donateWithWrongToken() public {
         notAllowedToken.approve(address(donationHandler), 100);
-        donationHandler.donate(address(notAllowedToken), address(1), 100, 0);
+        bytes[] memory donation = new bytes[](1);
+        donation[0] = _encode(address(notAllowedToken), 100, address(1));
+        donationHandler.vote(donation, deployer);
     }
 
     function test_donateEth() public {
-        donationHandler.donate{value: 100}(NATIVE, address(1), 90, 10);
+        bytes[] memory donation = new bytes[](1);
+        donation[0] = _encode(NATIVE, 100, address(1));
+        donationHandler.vote{value: 100}(donation, deployer);
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
-        assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
     }
 
     function test_donateMany() public {
-        IDonationHandler.RecipientInfo[] memory receiptsToken1 = new IDonationHandler.RecipientInfo[](2);
-        receiptsToken1[0] = IDonationHandler.RecipientInfo(address(1), 90);
-        receiptsToken1[1] = IDonationHandler.RecipientInfo(address(1), 90);
+        bytes[] memory donation = new bytes[](2);
 
-        IDonationHandler.RecipientInfo[] memory receiptsToken2 = new IDonationHandler.RecipientInfo[](2);
-        receiptsToken2[0] = IDonationHandler.RecipientInfo(address(1), 90);
-        receiptsToken2[1] = IDonationHandler.RecipientInfo(address(1), 90);
-
-        IDonationHandler.Donation[] memory donations = new IDonationHandler.Donation[](2);
-        donations[0] = IDonationHandler.Donation(address(allowedToken), 20, receiptsToken1);
-        donations[1] = IDonationHandler.Donation(address(allowedToken2), 20, receiptsToken2);
+        donation[0] = _encode(address(allowedToken), 200, address(1));
+        donation[1] = _encode(address(allowedToken2), 200, address(1));
 
         allowedToken.approve(address(donationHandler), 200);
         allowedToken2.approve(address(donationHandler), 200);
 
-        donationHandler.donateMany(donations);
+        donationHandler.vote(donation, deployer);
 
         assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 180);
         assertEq(donationHandler.balanceOf(address(allowedToken), address(donationHandler)), 20);
@@ -94,9 +89,9 @@ contract DonationHandlerTest is SharedInitialization {
     function test_withdraw() public {
         _donate();
         vm.prank(address(1));
-        donationHandler.withdraw(address(allowedToken), 80);
-        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 10);
-        assertEq(allowedToken.balanceOf(address(1)), 80);
+        donationHandler.withdraw(address(allowedToken), 90);
+        assertEq(donationHandler.balanceOf(address(allowedToken), address(1)), 0);
+        assertEq(allowedToken.balanceOf(address(1)), 90);
     }
 
     function test_withdrawMany() public {
@@ -117,13 +112,13 @@ contract DonationHandlerTest is SharedInitialization {
     function testFail_withdrawWrongToken() public {
         _donate();
         vm.prank(address(1));
-        donationHandler.withdraw(address(notAllowedToken), 80);
+        donationHandler.withdraw(address(notAllowedToken), 90);
     }
 
     function testFail_withdrawWrongRecipient() public {
         _donate();
         vm.prank(address(2));
-        donationHandler.withdraw(address(allowedToken), 80);
+        donationHandler.withdraw(address(allowedToken), 90);
     }
 
     function testFail_withdrawFeeNotAdmin() public {
@@ -149,7 +144,11 @@ contract DonationHandlerTest is SharedInitialization {
     }
 
     function test_WithdrawEth() public {
-        donationHandler.donate{value: 100}(NATIVE, address(1), 90, 10);
+        bytes[] memory donation = new bytes[](1);
+        donation[0] = _encode(NATIVE, 100, address(1));
+
+        donationHandler.vote{value: 100}(donation, deployer);
+
         assertEq(donationHandler.balanceOf(NATIVE, address(1)), 90);
         assertEq(donationHandler.balanceOf(NATIVE, address(donationHandler)), 10);
 

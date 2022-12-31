@@ -7,6 +7,7 @@ contract Config {
         address[] donationRecipient;
         address[] feeReceiver;
         address[] admins;
+        uint256 minFee;
     }
 
     NetworkConfig private activeNetworkConfig;
@@ -34,7 +35,7 @@ contract Config {
         feeReceivers[0] = address(1);
         admins[0] = address(1);
 
-        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins);
+        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins, 5e16);
     }
 
     // ================== Gnosis Config ==================
@@ -50,7 +51,7 @@ contract Config {
         feeReceivers[0] = address(1);
         admins[0] = address(1);
 
-        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins);
+        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins, 5e16);
     }
 
     // ================== Goerli Config ==================
@@ -66,7 +67,7 @@ contract Config {
         feeReceivers[0] = address(1);
         admins[0] = address(1);
 
-        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins);
+        return getConfig(acceptedTokens, donationRecipients, feeReceivers, admins, 5e16);
     }
 
     // ================== Helper ==================
@@ -79,7 +80,8 @@ contract Config {
         address[] memory _acceptedToken,
         address[] memory _donationRecipient,
         address[] memory _feeReceiver,
-        address[] memory _admins
+        address[] memory _admins,
+        uint256 _minFee
     ) internal pure returns (NetworkConfig memory) {
         uint256 tLength = _acceptedToken.length;
         uint256 dLength = _donationRecipient.length;
@@ -90,7 +92,8 @@ contract Config {
             acceptedToken: new address[](tLength),
             donationRecipient: new address[](dLength),
             feeReceiver: new address[](fLength),
-            admins: new address[](aLength)
+            admins: new address[](aLength),
+            minFee: _minFee
         });
 
         for (uint256 i = 0; i < tLength; i++) {
@@ -126,5 +129,9 @@ contract Config {
 
     function getAdmins() public view returns (address[] memory) {
         return activeNetworkConfig.admins;
+    }
+
+    function getMinFee() public view returns (uint256) {
+        return activeNetworkConfig.minFee;
     }
 }
