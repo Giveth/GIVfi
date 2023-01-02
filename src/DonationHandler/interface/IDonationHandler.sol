@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-interface IDonationHandler {
+import "./IDonationHandlerRoles.sol";
+
+interface IDonationHandler is IDonationHandlerRoles {
     /// @notice struct stores recipient and amount of a donation
     struct RecipientInfo {
         address recipient;

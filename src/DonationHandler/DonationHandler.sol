@@ -6,20 +6,18 @@ import {SafeERC20Upgradeable as SafeERC20} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable as ReentrancyGuard} from
     "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {MulticallUpgradeable as Multicall} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "./DonationHandlerRoles.sol";
-import "./interface/IDonationHandler.sol";
+import "../gitcoin/IVotingStrategy.sol";
 
 /// @title DonationHandler
 /// @author @Kurt for Giveth
 /// @notice This contract is used to handle donations
 /// This contract is build to use with proxies.
 ///
-/// The user can donate whitelisted token to whitelisted recipients by calling the donate function.
-/// A donation fee can be set by the user. The fee is paid in addition to the donation amount.
-/// The donation fee is the amount the donor pays to the fee receiver (protocol)
-/// The donation fee can be set by the user and is limited by the minFee.
-/// The min fee is set by default to 0 and can be changed by the protocol admins.
+/// The user can donate whitelisted token to whitelisted recipients by calling the vote function.
+///
+/// The fee is deducted from the users donation, assigned to the contracts address and can be withdrawn by a fee receiver.
+/// The min fee is set during initialization and can be changed by the protocol admins.
 /// The max fee is set by default to 1e18 and can't be changed.
 ///
 /// The user can withdraw the donation of a single token by calling the withdraw function.
@@ -33,7 +31,7 @@ import "./interface/IDonationHandler.sol";
 ///
 /// The donation balance of one token can be checked by calling the balanceOf function.
 /// The donation balance of multiple token can be checked by calling the balancesOf function.
-contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGuard, Multicall {
+contract DonationHandler is IVotingStrategy, DonationHandlerRoles, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice 1e18 represents 100%, 1e16 represents 1%
@@ -41,6 +39,9 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
 
     /// @notice Minimum donation fee. 0 by default
     uint256 public minFee;
+
+    bool public isTokenWhitelistActive;
+    bool public isRecipientWhitelistActive;
 
     /// @notice mapping: user => token => amount
     mapping(address => mapping(address => uint256)) public balances;
@@ -50,112 +51,94 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @param _donationReceiver Array of donation receivers
     /// @param _feeReceiver Array of fee receivers
     /// @param _admins Array of admins
+    /// @param _minFee Minimum donation fee
     function initialize(
         address[] calldata _acceptedToken,
         address[] calldata _donationReceiver,
         address[] calldata _feeReceiver,
-        address[] calldata _admins
+        address[] calldata _admins,
+        uint256 _minFee
     ) public initializer {
-        __DonationHandler_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins);
+        __DonationHandler_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins, _minFee);
     }
 
-    /// @notice Internal initialize function.
-    /// @param _acceptedToken Array of accepted tokens
-    /// @param _donationReceiver Array of donation receivers
-    /// @param _feeReceiver Array of fee receivers
-    /// @param _admins Array of admins
     function __DonationHandler_init(
         address[] calldata _acceptedToken,
         address[] calldata _donationReceiver,
         address[] calldata _feeReceiver,
-        address[] calldata _admins
+        address[] calldata _admins,
+        uint256 _minFee
     ) internal onlyInitializing {
         __DonationHandlerRoles_init(_acceptedToken, _donationReceiver, _feeReceiver, _admins);
         __ReentrancyGuard_init();
-        __Multicall_init();
+
+        if (_acceptedToken.length > 0) {
+            isTokenWhitelistActive = true;
+        }
+        if (_donationReceiver.length > 0) {
+            isRecipientWhitelistActive = true;
+        }
+
+        if (_minFee > 0) {
+            _setMinFee(_minFee);
+        }
     }
 
-    /// @notice Donate tokens to a recipient. The fee added to the donation amount.
-    /// @param _token Address of the token to donate
-    /// @param _recipient Address of the recipient
-    /// @param _amount Amount of tokens to donate
-    /// @param _fee Fee to be paid to the fee receiver (protocol)
-    function donate(address _token, address _recipient, uint256 _amount, uint256 _fee)
+    /// @notice Donate(vote) to a whitelisted recipient.
+    /// @param encodedVotes Array of donations
+    /// @param voterAddress Address of the voter
+    function vote(bytes[] calldata encodedVotes, address voterAddress)
         external
         payable
-        virtual
+        override
         nonReentrant
+        isRoundContract
     {
-        if (_amount == 0) revert InvalidAmount();
+        /// @dev iterate over multiple donations and transfer funds
+        uint256 length = encodedVotes.length;
+        uint256 msgValue = 0;
 
-        uint256 totalDonationAmount = _amount + _fee;
+        for (uint256 i = 0; i < length;) {
+            (address _token, uint256 _amount, address _grantAddress) =
+                abi.decode(encodedVotes[i], (address, uint256, address));
 
-        _checkToken(_token);
-        _checkDonationRecipient(_recipient);
-
-        _registerDonation(_token, _recipient, _amount);
-        _handleFee(_token, totalDonationAmount, _fee);
-
-        _transfer(_token, totalDonationAmount);
-    }
-
-    /// @notice Donate a list of donations.
-    /// @param _donations Array of donations. Each donation contains a token, a fee and a list of recipients. Each recipient contains an address and an amount.
-    function donateMany(Donation[] memory _donations) external payable nonReentrant {
-        uint256 donationLength = _donations.length;
-
-        for (uint256 i; i < donationLength;) {
-            Donation memory donation = _donations[i];
-
-            _checkToken(donation.token);
-
-            uint256 totalDonationAmount = donation.fee;
-            uint256 recipientLength = donation.recipients.length;
-
-            for (uint256 j; j < recipientLength;) {
-                RecipientInfo memory recipientInfo = donation.recipients[j];
-
-                _checkDonationRecipient(recipientInfo.recipient);
-
-                if (recipientInfo.amount == 0) revert InvalidAmount();
-                totalDonationAmount += recipientInfo.amount;
-
-                _registerDonation(donation.token, recipientInfo.recipient, recipientInfo.amount);
-
-                unchecked {
-                    j++;
-                }
+            if (isTokenWhitelistActive) _checkToken(_token);
+            if (isRecipientWhitelistActive) {
+                _checkDonationRecipient(_grantAddress);
             }
 
-            _handleFee(donation.token, totalDonationAmount, donation.fee);
-            _transfer(donation.token, totalDonationAmount);
+            if (_token != NATIVE) {
+                _transfer(voterAddress, _token, _amount);
+            } else {
+                msgValue += _amount;
+            }
+
+            /// @dev emit event for transfer
+            emit Voted(_token, _amount, voterAddress, _grantAddress, msg.sender);
+
+            if (minFee > 0) {
+                uint256 fee = (_amount * minFee) / HUNDRED;
+
+                _registerDonation(_token, _grantAddress, _amount - fee);
+                _registerFee(_token, fee);
+            } else {
+                _registerDonation(_token, _grantAddress, _amount);
+            }
 
             unchecked {
                 i++;
             }
         }
-    }
 
-    /// @notice registers the fee (if fee > 0) and checks if the fee amount is valid (only if the minFee is > 0)
-    /// @param _token Address of the token
-    /// @param _totalDonationAmount Total donation amount
-    /// @param _fee Fee to be paid to the fee receiver (protocol)
-    function _handleFee(address _token, uint256 _totalDonationAmount, uint256 _fee) internal virtual {
-        if (_fee > 0) {
-            _registerFee(_token, _fee);
-        }
-
-        if (minFee > 0) {
-            if ((_fee * HUNDRED) / _totalDonationAmount < minFee) {
-                revert FeeTooLow();
-            }
+        if (msgValue > msg.value) {
+            revert InvalidAmount();
         }
     }
 
     /// @notice Internal function. Registers a donated fee by adding it to the balance of the contract and emitting the FeeRegistered event.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
-    function _registerFee(address _token, uint256 _amount) internal virtual {
+    function _registerFee(address _token, uint256 _amount) internal {
         balances[address(this)][_token] += _amount;
         emit FeeRegistered(_token, msg.sender, _amount);
     }
@@ -164,7 +147,7 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @param _token Address of the token
     /// @param _recipient Address of the recipient
     /// @param _amount Amount of tokens
-    function _registerDonation(address _token, address _recipient, uint256 _amount) internal virtual {
+    function _registerDonation(address _token, address _recipient, uint256 _amount) internal {
         balances[_recipient][_token] += _amount;
         emit DonationRegistered(_token, msg.sender, _recipient, _amount);
     }
@@ -172,18 +155,15 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @notice Internal function. Transfers tokens from the sender to the contract.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
-    function _transfer(address _token, uint256 _amount) internal virtual {
-        if (_token != NATIVE) {
-            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        } else {
-            if (msg.value != _amount) revert InvalidAmount();
-        }
+    function _transfer(address _from, address _token, uint256 _amount) internal {
+        IERC20(_token).safeTransferFrom(_from, address(this), _amount);
     }
 
     /// @notice Withdraw tokens from the contract to msg.sender.
     /// @param _token Address of the token
     /// @param _amount Amount of tokens
     function withdraw(address _token, uint256 _amount) external nonReentrant {
+        if (_amount == 0) revert InvalidAmount();
         _withdraw(_token, msg.sender, msg.sender, _amount);
     }
 
@@ -235,7 +215,7 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @param _token Address array of the token to withdraw
     /// @param _from Address of the spender
     /// @param _to Address of the recipient
-    function _withdrawAll(address[] memory _token, address _from, address _to) internal virtual {
+    function _withdrawAll(address[] memory _token, address _from, address _to) internal {
         uint256 length = _token.length;
 
         for (uint256 i = 0; i < length;) {
@@ -258,7 +238,6 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @param _amount Amount of tokens to withdraw
     function _withdraw(address _token, address _from, address _to, uint256 _amount) internal virtual {
         if (_amount > balances[_from][_token]) revert InsufficientBalance();
-        if (_amount == 0) revert InvalidAmount();
 
         balances[_from][_token] -= _amount;
         if (_token == NATIVE) {
@@ -300,9 +279,31 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @param _minFee Minimum donation fee
     function setMinFee(uint256 _minFee) external {
         _checkAdmin(msg.sender);
+        _setMinFee(_minFee);
+    }
+
+    /// @notice Internal function. Set minimum donation fee. Emits MinFeeSet event.
+    /// @param _minFee Minimum donation fee
+    function _setMinFee(uint256 _minFee) internal {
         if (_minFee > HUNDRED) revert FeeTooHigh();
         minFee = _minFee;
         emit MinFeeSet(_minFee);
+    }
+
+    /// @notice Enable/Disable token whitelist. Can only be called by an Admin. Emits IsTokenWhitelistActiveSet event.
+    /// @param _isTokenWhitelistActive Enable/Disable token whitelist
+    function setIsTokenWhitelistActive(bool _isTokenWhitelistActive) external {
+        _checkAdmin(msg.sender);
+        isTokenWhitelistActive = _isTokenWhitelistActive;
+        emit IsTokenWhitelistActiveSet(_isTokenWhitelistActive);
+    }
+
+    /// @notice Enable/Disable recipient whitelist. Can only be called by an Admin. Emits IsRecipientWhitelistActiveSet event.
+    /// @param _isRecipientWhitelistActive Enable/Disable recipient whitelist
+    function setIsRecipientWhitelistActive(bool _isRecipientWhitelistActive) external {
+        _checkAdmin(msg.sender);
+        isRecipientWhitelistActive = _isRecipientWhitelistActive;
+        emit IsRecipientWhitelistActiveSet(_isRecipientWhitelistActive);
     }
 
     /// @notice Throws if passed fee is above 100%.
@@ -343,4 +344,20 @@ contract DonationHandler is IDonationHandler, DonationHandlerRoles, ReentrancyGu
     /// @notice Emitted when the minimum fee is set
     /// @param minFee The minimum fee
     event MinFeeSet(uint256 minFee);
+
+    /// @notice Emitted when the token whitelist is set to active or inactive
+    /// @param isTokenWhitelistActive The token whitelist status
+    event IsTokenWhitelistActiveSet(bool isTokenWhitelistActive);
+
+    /// @notice Emitted when the recipient whitelist is set to active or inactive
+    /// @param isRecipientWhitelistActive The recipient whitelist status
+    event IsRecipientWhitelistActiveSet(bool isRecipientWhitelistActive);
+
+    /// @notice Emitted when a new vote is sent
+    event Voted( // voting token
+        // voting amount
+        // voter address
+        // grant address
+        // round address
+    address token, uint256 amount, address indexed voter, address indexed grantAddress, address indexed roundAddress);
 }
