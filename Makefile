@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge fmt && forge build
 
-test :; forge test 
+test :; forge fmt && forge build && forge test 
 
 snapshot :; forge snapshot
 

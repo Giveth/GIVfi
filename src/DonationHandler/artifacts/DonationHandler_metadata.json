@@ -1,0 +1,1559 @@
+{
+	"compiler": {
+		"version": "0.8.17+commit.8df45f5f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "FeeTooHigh",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "FeeTooLow",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InsufficientBalance",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidAmount",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotAdmin",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotDefaultAdmin",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotFeeReceiver",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "RecipientNotAccepted",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TokenNotAccepted",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TransferFailed",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "recipient",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "DonationRegistered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "FeeRegistered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint8",
+						"name": "version",
+						"type": "uint8"
+					}
+				],
+				"name": "Initialized",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "isRecipientWhitelistActive",
+						"type": "bool"
+					}
+				],
+				"name": "IsRecipientWhitelistActiveSet",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "isTokenWhitelistActive",
+						"type": "bool"
+					}
+				],
+				"name": "IsTokenWhitelistActiveSet",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "minFee",
+						"type": "uint256"
+					}
+				],
+				"name": "MinFeeSet",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "voter",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantAddress",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "roundAddress",
+						"type": "address"
+					}
+				],
+				"name": "Voted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "Withdraw",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "ACCEPTED_TOKEN",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "ADMIN",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "DONATION_RECIPIENT",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "FEE_RECEIVER",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "HUNDRED",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "NATIVE",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_admins",
+						"type": "address[]"
+					}
+				],
+				"name": "addAdmin",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_recipients",
+						"type": "address[]"
+					}
+				],
+				"name": "addDonationRecipient",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_feeReceiver",
+						"type": "address[]"
+					}
+				],
+				"name": "addFeeReceiver",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					}
+				],
+				"name": "addToken",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_token",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "balanceOf",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "balances",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "balancesOf",
+				"outputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address",
+						"name": "_to",
+						"type": "address"
+					}
+				],
+				"name": "distribute",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address[]",
+						"name": "_to",
+						"type": "address[]"
+					}
+				],
+				"name": "distributeMany",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "init",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_acceptedToken",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address[]",
+						"name": "_donationReceiver",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address[]",
+						"name": "_feeReceiver",
+						"type": "address[]"
+					},
+					{
+						"internalType": "address[]",
+						"name": "_admins",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_minFee",
+						"type": "uint256"
+					}
+				],
+				"name": "initialize",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_account",
+						"type": "address"
+					}
+				],
+				"name": "isAdmin",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_recipient",
+						"type": "address"
+					}
+				],
+				"name": "isDonationRecipient",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_receiver",
+						"type": "address"
+					}
+				],
+				"name": "isFeeReceiver",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "isRecipientWhitelistActive",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_token",
+						"type": "address"
+					}
+				],
+				"name": "isTokenAccepted",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "isTokenWhitelistActive",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "minFee",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_admins",
+						"type": "address[]"
+					}
+				],
+				"name": "removeAdmin",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_recipients",
+						"type": "address[]"
+					}
+				],
+				"name": "removeDonationRecipient",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_feeReceiver",
+						"type": "address[]"
+					}
+				],
+				"name": "removeFeeReceiver",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					}
+				],
+				"name": "removeToken",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "revokeAdmin",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "roundAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bool",
+						"name": "_isRecipientWhitelistActive",
+						"type": "bool"
+					}
+				],
+				"name": "setIsRecipientWhitelistActive",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bool",
+						"name": "_isTokenWhitelistActive",
+						"type": "bool"
+					}
+				],
+				"name": "setIsTokenWhitelistActive",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_minFee",
+						"type": "uint256"
+					}
+				],
+				"name": "setMinFee",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "encodedVotes",
+						"type": "bytes[]"
+					},
+					{
+						"internalType": "address",
+						"name": "voterAddress",
+						"type": "address"
+					}
+				],
+				"name": "vote",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
+					}
+				],
+				"name": "withdraw",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_token",
+						"type": "address"
+					}
+				],
+				"name": "withdrawFee",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					}
+				],
+				"name": "withdrawFeeMany",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address[]",
+						"name": "_token",
+						"type": "address[]"
+					}
+				],
+				"name": "withdrawMany",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "@Kurt for Giveth",
+			"events": {
+				"DonationRegistered(address,address,address,uint256)": {
+					"params": {
+						"amount": "The amount of tokens",
+						"from": "The address of the sender",
+						"recipient": "The address of the recipient",
+						"token": "The token address"
+					}
+				},
+				"FeeRegistered(address,address,uint256)": {
+					"params": {
+						"amount": "The amount of tokens",
+						"from": "The address of the sender",
+						"token": "The token address"
+					}
+				},
+				"IsRecipientWhitelistActiveSet(bool)": {
+					"params": {
+						"isRecipientWhitelistActive": "The recipient whitelist status"
+					}
+				},
+				"IsTokenWhitelistActiveSet(bool)": {
+					"params": {
+						"isTokenWhitelistActive": "The token whitelist status"
+					}
+				},
+				"MinFeeSet(uint256)": {
+					"params": {
+						"minFee": "The minimum fee"
+					}
+				},
+				"Withdraw(address,address,address,uint256)": {
+					"params": {
+						"amount": "The amount of tokens",
+						"from": "The address of the sender",
+						"to": "The address of the recipient",
+						"token": "The token address"
+					}
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"addAdmin(address[])": {
+					"params": {
+						"_admins": "Array of addresses to assign to admin role."
+					}
+				},
+				"addDonationRecipient(address[])": {
+					"params": {
+						"_recipients": "Array of addresses to assign to donation recipient role."
+					}
+				},
+				"addFeeReceiver(address[])": {
+					"params": {
+						"_feeReceiver": "Array of addresses to assign to fee receiver role."
+					}
+				},
+				"addToken(address[])": {
+					"params": {
+						"_token": "Array of addresses to assign to accepted token role."
+					}
+				},
+				"balanceOf(address,address)": {
+					"params": {
+						"_token": "Address of the token",
+						"_user": "Address of the user"
+					},
+					"returns": {
+						"_0": "Token balance of the user"
+					}
+				},
+				"balancesOf(address[],address)": {
+					"params": {
+						"_token": "Address array of the token",
+						"_user": "Address of the user"
+					},
+					"returns": {
+						"_0": "Uint256 array. Token balances of the user"
+					}
+				},
+				"distribute(address[],address)": {
+					"params": {
+						"_to": "Address of the recipient",
+						"_token": "Address array of the token"
+					}
+				},
+				"distributeMany(address[],address[])": {
+					"params": {
+						"_to": "Address array of the recipients",
+						"_token": "Address array of the token"
+					}
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"initialize(address[],address[],address[],address[],uint256)": {
+					"params": {
+						"_acceptedToken": "Array of accepted tokens",
+						"_admins": "Array of admins",
+						"_donationReceiver": "Array of donation receivers",
+						"_feeReceiver": "Array of fee receivers",
+						"_minFee": "Minimum donation fee"
+					}
+				},
+				"isAdmin(address)": {
+					"params": {
+						"_account": "The address to check."
+					},
+					"returns": {
+						"_0": "bool True if address is admin, false otherwise."
+					}
+				},
+				"isDonationRecipient(address)": {
+					"params": {
+						"_recipient": "The address to check."
+					},
+					"returns": {
+						"_0": "bool True if address is a donation recipient, false otherwise."
+					}
+				},
+				"isFeeReceiver(address)": {
+					"params": {
+						"_receiver": "The address to check."
+					},
+					"returns": {
+						"_0": "bool True if address is a fee receiver, false otherwise."
+					}
+				},
+				"isTokenAccepted(address)": {
+					"params": {
+						"_token": "The address to check."
+					},
+					"returns": {
+						"_0": "bool True if address is whitelisted, false otherwise."
+					}
+				},
+				"removeAdmin(address[])": {
+					"params": {
+						"_admins": "Array of addresses to remove from admin role."
+					}
+				},
+				"removeDonationRecipient(address[])": {
+					"params": {
+						"_recipients": "Array of addresses to remove from donation recipient role."
+					}
+				},
+				"removeFeeReceiver(address[])": {
+					"params": {
+						"_feeReceiver": "Array of addresses to remove from fee receiver role."
+					}
+				},
+				"removeToken(address[])": {
+					"params": {
+						"_token": "Array of addresses to remove from accepted token role."
+					}
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
+				},
+				"setIsRecipientWhitelistActive(bool)": {
+					"params": {
+						"_isRecipientWhitelistActive": "Enable/Disable recipient whitelist"
+					}
+				},
+				"setIsTokenWhitelistActive(bool)": {
+					"params": {
+						"_isTokenWhitelistActive": "Enable/Disable token whitelist"
+					}
+				},
+				"setMinFee(uint256)": {
+					"params": {
+						"_minFee": "Minimum donation fee"
+					}
+				},
+				"supportsInterface(bytes4)": {
+					"details": "See {IERC165-supportsInterface}."
+				},
+				"vote(bytes[],address)": {
+					"params": {
+						"encodedVotes": "Array of donations",
+						"voterAddress": "Address of the voter"
+					}
+				},
+				"withdraw(address,uint256)": {
+					"params": {
+						"_amount": "Amount of tokens",
+						"_token": "Address of the token"
+					}
+				},
+				"withdrawFee(address)": {
+					"params": {
+						"_token": "Address of the token"
+					}
+				},
+				"withdrawFeeMany(address[])": {
+					"params": {
+						"_token": "Address array of the token"
+					}
+				},
+				"withdrawMany(address[])": {
+					"params": {
+						"_token": "Address array of the token"
+					}
+				}
+			},
+			"title": "DonationHandler",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"FeeTooHigh()": [
+					{
+						"notice": "Throws if passed fee is above 100%."
+					}
+				],
+				"FeeTooLow()": [
+					{
+						"notice": "Throws if passed fee is below minFee."
+					}
+				],
+				"InsufficientBalance()": [
+					{
+						"notice": "Throws if the withdrawal amount is too high."
+					}
+				],
+				"InvalidAmount()": [
+					{
+						"notice": "Throws if amount is zero or does not match the msg.value"
+					}
+				],
+				"NotAdmin()": [
+					{
+						"notice": "Throws if called by any account other than a admin."
+					}
+				],
+				"NotDefaultAdmin()": [
+					{
+						"notice": "Throws if called by any account other than a default admin."
+					}
+				],
+				"NotFeeReceiver()": [
+					{
+						"notice": "Throws if the sender is not a whitelisted fee receiver."
+					}
+				],
+				"RecipientNotAccepted()": [
+					{
+						"notice": "Throws if a donation recipient is not whitelisted."
+					}
+				],
+				"TokenNotAccepted()": [
+					{
+						"notice": "Throws if a token is not whitelisted."
+					}
+				],
+				"TransferFailed()": [
+					{
+						"notice": "Throws if the native currency transfer failed"
+					}
+				]
+			},
+			"events": {
+				"DonationRegistered(address,address,address,uint256)": {
+					"notice": "Emitted when a donation is registered"
+				},
+				"FeeRegistered(address,address,uint256)": {
+					"notice": "Emitted when a fee is registered"
+				},
+				"IsRecipientWhitelistActiveSet(bool)": {
+					"notice": "Emitted when the recipient whitelist is set to active or inactive"
+				},
+				"IsTokenWhitelistActiveSet(bool)": {
+					"notice": "Emitted when the token whitelist is set to active or inactive"
+				},
+				"MinFeeSet(uint256)": {
+					"notice": "Emitted when the minimum fee is set"
+				},
+				"Voted(address,uint256,address,address,address)": {
+					"notice": "Emitted when a new vote is sent"
+				},
+				"Withdraw(address,address,address,uint256)": {
+					"notice": "Emitted when a withdrawal is made"
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"HUNDRED()": {
+					"notice": "1e18 represents 100%, 1e16 represents 1%"
+				},
+				"NATIVE()": {
+					"notice": "special address which represents the native network currency. address(0) is used by gitcoin."
+				},
+				"addAdmin(address[])": {
+					"notice": "Assigns addresses to admin role. Can only be called by an admin."
+				},
+				"addDonationRecipient(address[])": {
+					"notice": "Assigns addresses to donation recipient role. Can only be called by an admin."
+				},
+				"addFeeReceiver(address[])": {
+					"notice": "Assigns addresses to fee receiver role. Can only be called by an admin."
+				},
+				"addToken(address[])": {
+					"notice": "Assigns addresses to accepted token role. Can only be called by an admin."
+				},
+				"balanceOf(address,address)": {
+					"notice": "Returns the token balance of a user"
+				},
+				"balances(address,address)": {
+					"notice": "mapping: user => token => amount"
+				},
+				"balancesOf(address[],address)": {
+					"notice": "Returns the token balances of a user"
+				},
+				"distribute(address[],address)": {
+					"notice": "Distributes full amount of token arrays token from the contract to a recipient."
+				},
+				"distributeMany(address[],address[])": {
+					"notice": "Distributes full amount of token arrays token from the contract to an array of recipients."
+				},
+				"init()": {
+					"notice": "Invoked by RoundImplementation on creation to set the round for which the voting contracts is to be used"
+				},
+				"initialize(address[],address[],address[],address[],uint256)": {
+					"notice": "Initialize the contract."
+				},
+				"isAdmin(address)": {
+					"notice": "Wrapper function to check if an address is admin."
+				},
+				"isDonationRecipient(address)": {
+					"notice": "Wrapper function to check if an address is a donation recipient."
+				},
+				"isFeeReceiver(address)": {
+					"notice": "Wrapper function to check if an address is a fee receiver."
+				},
+				"isTokenAccepted(address)": {
+					"notice": "Wrapper function to check if an address is a whitelisted token."
+				},
+				"minFee()": {
+					"notice": "Minimum donation fee. 0 by default"
+				},
+				"removeAdmin(address[])": {
+					"notice": "Removes addresses from admin role. Can only be called by default admin."
+				},
+				"removeDonationRecipient(address[])": {
+					"notice": "Removes addresses from donation recipient role. Can only be called by an admin."
+				},
+				"removeFeeReceiver(address[])": {
+					"notice": "Removes addresses from fee receiver role. Can only be called by an admin."
+				},
+				"removeToken(address[])": {
+					"notice": "Removes addresses from accepted token role. Can only be called by an admin."
+				},
+				"roundAddress()": {
+					"notice": "Round address"
+				},
+				"setIsRecipientWhitelistActive(bool)": {
+					"notice": "Enable/Disable recipient whitelist. Can only be called by an Admin. Emits IsRecipientWhitelistActiveSet event."
+				},
+				"setIsTokenWhitelistActive(bool)": {
+					"notice": "Enable/Disable token whitelist. Can only be called by an Admin. Emits IsTokenWhitelistActiveSet event."
+				},
+				"setMinFee(uint256)": {
+					"notice": "Set minimum donation fee. Can only be called by an Admin. Emits MinFeeSet event."
+				},
+				"vote(bytes[],address)": {
+					"notice": "Donate(vote) to a whitelisted recipient."
+				},
+				"withdraw(address,uint256)": {
+					"notice": "Withdraw tokens from the contract to msg.sender."
+				},
+				"withdrawFee(address)": {
+					"notice": "Withdraw donated fees from the contract to a fee receiver. Can only be called by a fee receiver."
+				},
+				"withdrawFeeMany(address[])": {
+					"notice": "Withdraw donated fees from the contract to a fee receiver. Can only be called by a fee receiver."
+				},
+				"withdrawMany(address[])": {
+					"notice": "Withdraw full amount of token arrays token from the contract to msg.sender."
+				}
+			},
+			"notice": "This contract is used to handle donations This contract is build to use with proxies. The user can donate whitelisted token to whitelisted recipients by calling the vote function. The fee is deducted from the users donation, assigned to the contracts address and can be withdrawn by a fee receiver. The min fee is set during initialization and can be changed by the protocol admins. The max fee is set by default to 1e18 and can't be changed. The user can withdraw the donation of a single token by calling the withdraw function. The user can withdraw all donations of a list of token by calling the withdrawMany function. The fee receiver can withdraw the donation fee by calling the withdrawFee function. The fee receiver can withdraw the donation fee of a list of token by calling the withdrawFeeMany function. Users can distribute the funds of a list of token in behalf of a recipient by calling the distribute function. Users can distribute the funds of a list of token in behalf of a list of recipients by calling the distributeMany function. The donation balance of one token can be checked by calling the balanceOf function. The donation balance of multiple token can be checked by calling the balancesOf function.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"giveth/GIVfi/src/DonationHandler/DonationHandler.sol": "DonationHandler"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol": {
+			"keccak256": "0xe8f27a3e3e25067334e76799f03d4de6d8f8535c3fc4806468228a9ebd5de51a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://686aaf8725727d94b36c53baad3779e168b31e33eec8d39b41e282382617c626",
+				"dweb:/ipfs/QmWVRwPpZyweGCw7uRj1rXQTmcwaXB5Ctz3KvpNJPtxDP8"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol": {
+			"keccak256": "0xb8f5302f12138c5561362e88a78d061573e6298b7a1a5afe84a1e2c8d4d5aeaa",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://740cf4dc535e3082560cf5a031473029f322690fc8037fe9d5e3a8bef42e757c",
+				"dweb:/ipfs/QmTQxFdfxcaueQa23VX34wAPqzruZbkzyeN58tZK2yav2b"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol": {
+			"keccak256": "0xe798cadb41e2da274913e4b3183a80f50fb057a42238fe8467e077268100ec27",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://899f850f7df5a270bccfb765d70069959ca1c20d3a7381c1c3bda8a3ffee1935",
+				"dweb:/ipfs/QmVdnAqwyX2L3nX2HDA5WKGtVBFyH1nKE9A1k7fZnPBkhP"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol": {
+			"keccak256": "0x2b3005a0064cfc558bdf64b2bae94b565f4574a536aadd61c13838d4f2157790",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://622c3eb87563e71585c9f538d1a196fe2d154dcc5b8f335e8770a8acc95e1f3a",
+				"dweb:/ipfs/QmSnDqJJLzv3mirjGB1vrk5X7hegFdS7BKpscpxyqj7sWu"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol": {
+			"keccak256": "0x4e733d3164f73f461eaf9d8087a7ad1ea180bdc8ba0d3d61b0e1ae16d8e63dff",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://75b47c3aeca7b66ea6752f8be020ec5c1c502de6ec9065272dae23d3a52196e2",
+				"dweb:/ipfs/QmUebPMHv16tYKFh5BmBQkMfRFb5b8UZ2RgVwdjxCeufVF"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol": {
+			"keccak256": "0xcc70d8e2281fb3ff69e8ab242500f10142cd0a7fa8dd9e45882be270d4d09024",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://17a4063bc918df0f7bb9cbf04c6f0bb4977afab3f2fc212bc138a178312a221d",
+				"dweb:/ipfs/QmZMdvsHP5mDEAAdrK4bNeNh47TfmSFgN9qEBFTbie7zmm"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol": {
+			"keccak256": "0x220c4a5af915e656be2aaa85ca57505d102418e476b1e2ef6c62e0c6ac143871",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6ed2c33173f7e7000889abed7c339b7a0e3b7867cdea546caaf6bc917ef1039c",
+				"dweb:/ipfs/QmQ4Ye5h7jm6V4CdhT3r6hvf25DtiV74ErppQVE4SpRKj6"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol": {
+			"keccak256": "0x2edcb41c121abc510932e8d83ff8b82cf9cdde35e7c297622f5c29ef0af25183",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://72460c66cd1c3b1c11b863e0d8df0a1c56f37743019e468dc312c754f43e3b06",
+				"dweb:/ipfs/QmPExYKiNb9PUsgktQBupPaM33kzDHxaYoVeJdLhv8s879"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol": {
+			"keccak256": "0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://d6520943ea55fdf5f0bafb39ed909f64de17051bc954ff3e88c9e5621412c79c",
+				"dweb:/ipfs/QmWZ4rAKTQbNG2HxGs46AcTXShsVytKeLs7CUCdCSv5N7a"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol": {
+			"keccak256": "0x6b9a5d35b744b25529a2856a8093e7c03fb35a34b1c4fb5499e560f8ade140da",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://187b5c3a1c9e77678732a2cc5284237f9cfca6bc28ee8bc0a0f4f951d7b3a2f8",
+				"dweb:/ipfs/Qmb2KFr7WuQu7btdCiftQG64vTzrG4UyzVmo53EYHcnHYA"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol": {
+			"keccak256": "0x9a3b990bd56d139df3e454a9edf1c64668530b5a77fc32eb063bc206f958274a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0895399d170daab2d69b4c43a0202e5a07f2e67a93b26e3354dcbedb062232f7",
+				"dweb:/ipfs/QmUM1VH3XDk559Dsgh4QPvupr3YVKjz87HrSyYzzVFZbxw"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol": {
+			"keccak256": "0xc6cef87559d0aeffdf0a99803de655938a7779ec0a3cd5d4383483ad85565a09",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://92ad7e572cf44e6b4b37631b44b62f9eb9fb1cf14d9ce51c1504d5dc7ccaf758",
+				"dweb:/ipfs/QmcnbqX85tsWnUXPmtuPLE4SczME2sJaTfmqEFkuAJvWhy"
+			]
+		},
+		"@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol": {
+			"keccak256": "0xc1bd5b53319c68f84e3becd75694d941e8f4be94049903232cd8bc7c535aaa5a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://056027a78e6f4b78a39be530983551651ee5a052e786ca2c1c6a3bb1222b03b4",
+				"dweb:/ipfs/QmXRUpywAqNwAfXS89vrtiE2THRM9dX9pQ4QxAkV1Wx9kt"
+			]
+		},
+		"giveth/GIVfi/src/DonationHandler/DonationHandler.sol": {
+			"keccak256": "0xbcd1929f15bf25fbd0ea11fc9a29c71863e69fd7ba108db091371f85d3e0341c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://336b64a8013b8635ac354af39a1dab0ac99aa3a157c049806564473d0baf84f8",
+				"dweb:/ipfs/QmbXMiBnomdmJw5ezbdugPkkrkPYctEfKhi1u6v2a3KbzM"
+			]
+		},
+		"giveth/GIVfi/src/DonationHandler/DonationHandlerRoles.sol": {
+			"keccak256": "0x09aa18e8c7f0a7fec7f8ff09c30f916e1b0a9288aaaae56d78555d868a78f875",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://56a3998b440ca886e5d6cc2c0954191210bd18dbe3a99e2bbcbc7564236b2098",
+				"dweb:/ipfs/QmT1EFfSpbcAsAfyqNtkEy8pLKaFYXYTnyRuzQmJGLdKax"
+			]
+		},
+		"giveth/GIVfi/src/gitcoin/IVotingStrategy.sol": {
+			"keccak256": "0x294e63ce1df9e00acd8969ec71323adeeb1b3598a2a97cf389364ff8cd445f88",
+			"license": "AGPL-3.0-only",
+			"urls": [
+				"bzz-raw://6ae88b9a4e997a15afcd05a607e334a15751aeae7a5f20e5c51c4dfb75078dca",
+				"dweb:/ipfs/QmW1YGotPJ3AG3dUtLfC8XSAF5nPHjhYMCH5baDtkqG88T"
+			]
+		}
+	},
+	"version": 1
+}

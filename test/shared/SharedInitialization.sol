@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../../src/DonationHandler.sol";
+import "../../src/DonationHandler/DonationHandler.sol";
 import "../mocks/MockERC20.sol";
 
 contract SharedInitialization is Test {
     address deployer = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
-    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address public constant NATIVE = address(0);
 
     DonationHandler public donationHandler;
     MockERC20 public allowedToken;
@@ -39,7 +39,8 @@ contract SharedInitialization is Test {
     }
 
     function _initializeDonationHandler() internal {
-        donationHandler.initialize(acceptedToken, donationRecipient, feeReceiver, admins);
+        donationHandler.init();
+        donationHandler.initialize(acceptedToken, donationRecipient, feeReceiver, admins, 1e17);
     }
 
     // Events
