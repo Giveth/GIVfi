@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 import "./interfaces/IERC20.sol";
 import "./interfaces/IWETH.sol";
@@ -78,7 +78,8 @@ abstract contract WrappedPosition is ERC20Permit, IWrappedPosition {
     /// @param _destination The address to mint to
     /// @return Returns the number of Wrapped Position tokens minted
     function deposit(address _destination, uint256 _amount)
-        external
+        public
+        virtual
         override
         returns (uint256)
     {
@@ -168,7 +169,7 @@ abstract contract WrappedPosition is ERC20Permit, IWrappedPosition {
         uint256 _shares,
         uint256 _minUnderlying,
         uint256 _underlyingPerShare
-    ) internal returns (uint256) {
+    ) internal virtual returns (uint256) {
         // Burn users shares
         _burn(msg.sender, _shares);
 
