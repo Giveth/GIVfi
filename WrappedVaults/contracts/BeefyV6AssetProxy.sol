@@ -175,8 +175,7 @@ contract BeefyV6AssetProxy is WrappedPosition, Authorizable {
             currentPricePerShare;
         // We now withdraw from the old yearn vault using max shares
         // Note - Vaults should be checked in the future that they still have this behavior
-        uint256 shares = vault.balanceOf(address(this));
-        vault.withdraw(shares);
+        vault.withdrawAll();
         // Approve the new vault
         token.approve(address(newVault), type(uint256).max);
         // Then we deposit into the new vault
