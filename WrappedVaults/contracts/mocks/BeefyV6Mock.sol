@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Unlicensed
 pragma solidity 0.8.17;
 
 import {ERC20Permit as ERC20} from "../element-fi/libraries/ERC20Permit.sol";
@@ -43,7 +44,7 @@ contract BeefyV6Mock is IBeefyV6, ERC20 {
         sharePrice = _newSharePrice;
     }
 
-    function earn() external {
+    function earn() external pure {
         revert("earn not implemented");
     }
 
