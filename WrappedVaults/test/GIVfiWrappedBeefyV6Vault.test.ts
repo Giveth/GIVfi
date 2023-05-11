@@ -2,7 +2,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-
 describe("GIVfiWrappedBeefyV6Vault", function() {
 
   // Define variables to be used in test cases
@@ -40,5 +39,5 @@ describe("GIVfiWrappedBeefyV6Vault", function() {
 
   });
 
-  
+
 });
