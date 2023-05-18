@@ -24,7 +24,7 @@ contract BeefyV6Mock is IBeefyV6, ERC20 {
     }
 
     function withdraw(uint256 _shares) external {
-        uint256 amountToWithdraw = _shares * 1e18 / sharePrice;
+        uint256 amountToWithdraw = sharePrice * _shares / 1e18;
         _burn(msg.sender, _shares);
         underlyingToken.transfer(msg.sender, amountToWithdraw);
     }

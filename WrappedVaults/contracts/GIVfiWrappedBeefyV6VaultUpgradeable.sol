@@ -36,7 +36,7 @@ contract GIVfiWrappedBeefyV6VaultUpgradeable is Initializable, BeefyV6AssetProxy
             accruedInterest = underlyingBalance - balanceSnapshot;
 
             uint256 feeAmount = (accruedInterest * fee) / FEE_DENOMINATOR;
-            uint256 feeInShares = feeAmount / _pricePerShare();
+            uint256 feeInShares = feeAmount * 1e18 / _pricePerShare();
 
             // mint fee shares to fee recipient
             // burn fee shares from _destination

@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import "./IBeefyV6.sol";
 import "./element-fi/WrappedPositionUpgradeable.sol";
-import "./element-fi/libraries/Authorizable.sol";
+import "./element-fi/libraries/AuthorizableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// SECURITY - This contract has an owner address which can migrate funds to a new yearn vault [or other contract
@@ -36,6 +36,7 @@ contract BeefyV6AssetProxyUpgradeable is Initializable, WrappedPositionUpgradeab
         address _governance,
         address _pauser
     ) internal onlyInitializing {
+        __Authorizable_init();
         // Authorize the pauser
         _authorize(_pauser);
         // set the owner
