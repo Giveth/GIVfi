@@ -55,23 +55,5 @@ Withdraws the specified amount of underlying tokens from the smart contract to t
 ### prefundedDeposit(address destination)
 Deposits the tokens into the smart contract and mints internal ERC20 tokens to the destination address. Returns the number of shares, used underlying tokens, and the balance of the destination address before the deposit.
 
-### getPricePerFullShare() (view)
-
-Returns the price per full share of the BeefyV6 vault.
-### deposit(uint256 amount)
-Deposits the specified amount of tokens into the BeefyV6 vault.
-### withdraw(uint256 shares)
-Withdraws the specified number of shares from the BeefyV6 vault.
-
-### withdrawAll()
-
-Withdraws all shares from the BeefyV6 vault.
-### earn()
-Executes the earn function of the BeefyV6 vault.
-
-### available() (view)
-
-Returns the amount of tokens available in the BeefyV6 vault.
-
-### want() (view)
-Returns the underlying ERC20 token of the BeefyV6 vault.
+### deposit(address _destination, uint256_amount)
+This function allows a user to deposit a specified _amount of tokens to the vault for the given_destination address.
