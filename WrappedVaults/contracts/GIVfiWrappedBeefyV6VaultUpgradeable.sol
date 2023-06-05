@@ -36,9 +36,9 @@ contract GIVfiWrappedBeefyV6VaultUpgradeable is
         feeRecipient = _feeRecipient;
     }
 
-    modifier handleFeeOnInterest(address _destination) {
-        uint256 underlyingBalance = _underlying(balanceOf(_destination));
-        uint256 balanceSnapshot = balanceSnapshots[_destination];
+    modifier handleFeeOnInterest(address _account) {
+        uint256 underlyingBalance = _underlying(balanceOf(_account));
+        uint256 balanceSnapshot = balanceSnapshots[_account];
         uint256 accruedInterest = 0;
 
         // check if user has accrued interest (deposited amount - underlying balance)
@@ -52,9 +52,9 @@ contract GIVfiWrappedBeefyV6VaultUpgradeable is
             // burn fee shares from _destination
             if (feeInShares > 0) {
                 _mint(feeRecipient, feeInShares);
-                _burn(_destination, feeInShares);
+                _burn(_account, feeInShares);
                 emit FeesPaid(
-                    _destination,
+                    _account,
                     feeRecipient,
                     feeInShares,
                     feeAmount
@@ -63,7 +63,7 @@ contract GIVfiWrappedBeefyV6VaultUpgradeable is
         }
 
         _;
-        balanceSnapshots[_destination] = _underlying(balanceOf(_destination));
+        balanceSnapshots[_account] = _underlying(balanceOf(_account));
     }
 
     function deposit(
@@ -84,14 +84,14 @@ contract GIVfiWrappedBeefyV6VaultUpgradeable is
     )
         internal
         override
-        handleFeeOnInterest(_destination)
+        handleFeeOnInterest(msg.sender)
         returns (uint256 withdrawAmount)
     {
         uint256 shares = _shares;
 
         // if shares are greater than balance (because of fee deduction), withdraw all
-        if (shares > balanceOf(_destination)) {
-            shares = balanceOf(_destination);
+        if (shares > balanceOf(msg.sender)) {
+            shares = balanceOf(msg.sender);
         }
 
         withdrawAmount = super._positionWithdraw(
